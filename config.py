@@ -1,0 +1,4 @@
+from hwspi.constants import HSPI
+
+THERMOCOUPLE_BUSID      = HSPI
+THERMOCOUPLE_BAUDRATE   = 5000000

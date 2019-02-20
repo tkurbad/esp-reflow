@@ -1,55 +1,56 @@
 ## ESP32 Reflow Oven
 #
-# Temperature Read and Display Thread
+# Temperature Read Thread Definition
 
 import _thread
-
 from time import sleep
-
-from hwspi.hwspi import HSPI, VSPI
-
-from ili9341 import ILI9341, color565
-from ili9341.fonts import tt14, tt24
 
 from max31855 import MAX31855
 
-from wlan_sta import STA
+import config
 
+class Thermocouple:
+
+    _busid = None
+    _baudrate = None
+    _tcs = dict()
+    _temps = dict()
+
+    def __init__(self, busid = config.THERMOCOUPLE_BUSID,
+        baudrate = config.THERMOCOUPLE_BAUDRATE):
+        if Thermocouple._busid is None:
+            Thermocouple._busid = busid
+        if Thermocouple._busid != busid:
+            raise RuntimeError('Thermocouple busid already initialized with %d'
+                                % Thermocouple._busid)
+        if Thermocouple._baudrate is None:
+            Thermocouple._baudrate = baudrate
+        if Thermocouple._baudrate != baudrate:
+            raise RuntimeError('Thermocouple baudrate already initialized with %d'
+                                % Thermocouple._baudrate)
+
+    def add_tc(self, name, cs):
+        if name is None:
+            raise RuntimeError('Thermocouple must have a name')
+        Thermocouple._tcs[name] = MAX31855(busid = Thermocouple._busid, cs = cs))
+        Thermocouple._temps[name] = (0.0, 0.0)
+
+    def remove_tc(self, name):
+        if name is None:
+            raise RuntimeError('Thermocouple must have a name')
+        del(Thermocouple._tcs[name])
+        del(Thermocouple._temps[name])
+
+    def read_temps(self):
+        for tc in Thermocouple._tcs.keys():
+            Thermocouple._temps[name] = tc.read()
+
+
+--- MOVE!!! ---
 # Setup
-display = ILI9341(busid = VSPI, cs = 22, dc = 21, baudrate = 60000000)
 tc1 = MAX31855(busid = HSPI, cs = 15)
 tc2 = MAX31855(busid = HSPI, cs = 2)
 tc3 = MAX31855(busid = HSPI, cs = 4)
-bgcolor = color565(200, 200, 200)
-fgcolor = color565(0, 0, 0)
-
-y_ip = 2
-
-y_upper = 262
-y_lower = 293
-
-# Init Display
-display.erase()
-display.fill_rectangle(0, 0, 240, 19, color = bgcolor)
-
-display.fill_rectangle(0, 260, 240, 29, color = bgcolor)
-display.fill_rectangle(0, 291, 240, 29, color = bgcolor)
-display.set_color(fgcolor, bgcolor)
-
-ip = STA().ipaddress
-
-display.set_font(tt14)
-tt14_extra = display._font.get_width(' ')
-x_ip = display.chars('IP', 10, y_ip) + tt14_extra
-display.chars(ip, x_ip, y_ip)
-
-display.set_font(tt24)
-x_extra = display._font.get_width(' ')
-x_tc1 = display.chars('TC1', 10, y_upper) + x_extra
-x_tc2 = display.chars('TC2', 125, y_upper) + x_extra
-
-x_tc3 = display.chars('TC3', 10, y_lower) + x_extra
-x_internal = display.chars('INT', 135, y_lower) + x_extra
 
 
 def tempThread(ip):
