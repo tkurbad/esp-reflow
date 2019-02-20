@@ -1,3 +1,7 @@
+# WiFi Interface Class for ESP32 Micropython Driven SMD Reflow Oven
+#
+# MIT license; Copyright (c) 2019 Torsten Kurbad
+
 from time import sleep
 from network import STA_IF, WLAN
 

@@ -1,71 +1,84 @@
-## ESP32 Reflow Oven
+# Temperature Reading Classes for ESP32 Micropython Driven
+# SMD Reflow Oven
 #
-# Temperature Read and Display Thread
+# MIT license; Copyright (c) 2019 Torsten Kurbad
 
 import _thread
-
 from time import sleep
-
-from hwspi.hwspi import HSPI, VSPI
-
-from ili9341 import ILI9341, color565
-from ili9341.fonts import tt14, tt24
 
 from max31855 import MAX31855
 
-from wlan_sta import STA
-
-# Setup
-display = ILI9341(busid = VSPI, cs = 22, dc = 21, baudrate = 60000000)
-tc1 = MAX31855(busid = HSPI, cs = 15)
-tc2 = MAX31855(busid = HSPI, cs = 2)
-tc3 = MAX31855(busid = HSPI, cs = 4)
-bgcolor = color565(200, 200, 200)
-fgcolor = color565(0, 0, 0)
-
-y_ip = 2
-
-y_upper = 262
-y_lower = 293
-
-# Init Display
-display.erase()
-display.fill_rectangle(0, 0, 240, 19, color = bgcolor)
-
-display.fill_rectangle(0, 260, 240, 29, color = bgcolor)
-display.fill_rectangle(0, 291, 240, 29, color = bgcolor)
-display.set_color(fgcolor, bgcolor)
-
-ip = STA().ipaddress
-
-display.set_font(tt14)
-tt14_extra = display._font.get_width(' ')
-x_ip = display.chars('IP', 10, y_ip) + tt14_extra
-display.chars(ip, x_ip, y_ip)
-
-display.set_font(tt24)
-x_extra = display._font.get_width(' ')
-x_tc1 = display.chars('TC1', 10, y_upper) + x_extra
-x_tc2 = display.chars('TC2', 125, y_upper) + x_extra
-
-x_tc3 = display.chars('TC3', 10, y_lower) + x_extra
-x_internal = display.chars('INT', 135, y_lower) + x_extra
+from config import THERMOCOUPLE_BAUDRATE, THERMOCOUPLE_BUSID
 
 
-def tempThread(ip):
-    while True:
-        c1, int1 = tc1.read()
-        c2, int2 = tc2.read()
-        c3, int3 = tc3.read()
-        w1 = display.chars('%.2f ' % c1, x_tc1, y_upper)
-        w2 = display.chars('%.2f ' % c2, x_tc2, y_upper)
-        w3 = display.chars('%.2f ' % c3, x_tc3, y_lower)
-        wint = display.chars('%.2f ' % max(int1, int2, int3), x_tc2, y_lower)
-        if ip != STA().ipaddress:
-            ip = STA().ipaddress
-            display.set_font(tt14)
-            display.chars(ip, x_ip, y_ip)
-            display.set_font(tt24)
-        sleep(1)
+class Thermocouple:
+    """ Class to Manage and Read Several MAX31855 Thermocouple
+        Amplifiers Connected to the Same Hardware SPI Bus, and their
+        Values.
+    """
+    _busid = None       # Default Hardware SPI Bus Id
+    _baudrate = None    # Default Baudrate
+    _tcs = dict()       # Dictionary Holding All Configured Thermocouples
+    _temps = dict()     # Dictionary Holding Last Temperature Readings
 
-_thread.start_new_thread(tempThread, (ip, ))
+    def __init__(self, busid = None, baudrate = None):
+        """ Initialize the Hardware SPI Bus for Use with MAX31855
+            Thermocouple Amplifiers.
+        """
+        if busid is not None:
+            if ((Thermocouple._busid is not None)
+                and (Thermocouple._busid != busid)):
+                raise RuntimeError('Thermocouple busid already initialized with %d'
+                                    % Thermocouple._busid)
+            Thermocouple._busid = busid
+        if Thermocouple._busid is None:
+            Thermocouple._busid = THERMOCOUPLE_BUSID
+        if baudrate is not None:
+            if ((Thermocouple._baudrate is not None)
+                and (Thermocouple._baudrate != baudrate)):
+                raise RuntimeError('Thermocouple baudrate already initialized with %d'
+                                   % Thermocouple._baudrate)
+            Thermocouple._baudrate = baudrate
+        if Thermocouple._baudrate is None:
+            Thermocouple._baudrate = THERMOCOUPLE_BAUDRATE
+
+    def add_tc(self, name, cs):
+        """ Add and Initialize a Thermocouple with Index Name 'name' and
+            Chip Select Pin Number 'cs'.
+        """
+        if name is None:
+            raise RuntimeError('Thermocouple must have a name')
+        if name in Thermocouple._tcs.keys():
+            raise RuntimeError('Thermocouple %s already added' % name)
+        if Thermocouple._tcs:
+            for (tc_name, tc) in Thermocouple._tcs.items():
+                if ('Pin(%d)' % cs) == str(tc.spi.cs):
+                    raise RuntimeError('Thermocouple "%s" is already configured for cs pin %d'
+                                % (tc_name, cs))
+        Thermocouple._tcs[name] = MAX31855(busid = Thermocouple._busid,
+                                           cs = cs,
+                                           baudrate = Thermocouple._baudrate)
+        Thermocouple._temps[name] = (0.0, 0.0)
+
+    def remove_tc(self, name):
+        """ Remove the Thermocouple with Index Name 'name' from the
+            List of Active Thermocouples. """
+        if name is None:
+            raise RuntimeError('Thermocouple must have a name')
+        if name not in self._tcs.keys():
+            return
+        del(Thermocouple._tcs[name])
+        del(Thermocouple._temps[name])
+
+    def read_temps(self):
+        """ Read Temperatures from All Configured Thermocouples and
+            Store them in the Class Variable _temps.
+        """
+        for (name, tc) in Thermocouple._tcs.items():
+            Thermocouple._temps[name] = tc.read()
+
+    @property
+    def temp(self):
+        """ Return the Last Temperature Readings of All Thermocouples.
+        """
+        return Thermocouple._temps
