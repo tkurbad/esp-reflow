@@ -34,9 +34,8 @@ tft.show_ipaddress(ipaddress)
 
 def thermocoupleReadThread(lock):
     while True:
-        lock.acquire()
-        thermocouples.read_temps()
-        lock.release()
+        with lock as l:
+            thermocouples.read_temps()
         sleep(1)
 
 def statusDisplayThread():
