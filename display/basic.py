@@ -20,11 +20,13 @@ class Display(ILI9341):
                          baudrate = config.DISPLAY_BAUDRATE)
         self.prepared = False
 
-    def _prepare(self):
+    def prepare(self):
         """ Erase Display, Set Up Status Bars, etc. """
         # Erase
         self.erase()
         # Prepare top and bottom status bars
+        self.set_color(config.DISPLAY_STATUS_FG_COLOR,
+                       config.DISPLAY_STATUS_BG_COLOR)
         self.fill_rectangle(0,
                             config.DISPLAY_TOP_BAR_Y,
                             config.DISPLAY_WIDTH,
@@ -41,19 +43,20 @@ class Display(ILI9341):
                             config.DISPLAY_LOW_BAR_HEIGHT,
                             color = config.DISPLAY_STATUS_BG_COLOR)
         self.set_font(tt14)
-        self.x_ipaddress = self.chars('IP ',
+        self.ipaddress_x = self.chars('IP ',
                                       config.DISPLAY_TOP_BAR_TEXT_X,
                                       config.DISPLAY_TOP_BAR_TEXT_Y)
         self.set_font(tt24)
-
-
-x_extra = display._font.get_width(' ')
-x_tc1 = display.chars('TC1', 10, y_upper) + x_extra
-x_tc2 = display.chars('TC2', 125, y_upper) + x_extra
-
-x_tc3 = display.chars('TC3', 10, y_lower) + x_extra
-x_internal = display.chars('INT', 135, y_lower) + x_extra
-
+        self.tc_x = dict()
+        for tc_name in [config.THERMOCOUPLE_NAME1,
+                        config.THERMOCOUPLE_NAME2,
+                        config.THERMOCOUPLE_NAME3,
+                        config.THERMOCOUPLE_NAME4]:
+            self.tc_x[tc_name] = self.chars(
+                                    config.THERMOCOUPLE_LABEL[tc_name],
+                                    config.DISPLAY_LOW_BAR_TEXT_X[tc_name],
+                                    config.DISPLAY_LOW_BAR_TEXT_Y[tc_name]
+                                    )
         self.prepared = True
 
     def show_ipaddress(self, ipaddress):
@@ -63,7 +66,7 @@ x_internal = display.chars('INT', 135, y_lower) + x_extra
                        config.DISPLAY_STATUS_BG_COLOR)
         self.set_font(tt14)
         self.chars('%s   ' % ipaddress,
-                   self.x_ipaddress,
+                   self.ipaddress_x,
                    config.DISPLAY_TOP_BAR_TEXT_Y)
         self.set_font(tt24)
 
@@ -74,9 +77,11 @@ x_internal = display.chars('INT', 135, y_lower) + x_extra
             return
         self.set_color(config.DISPLAY_STATUS_FG_COLOR,
                        config.DISPLAY_STATUS_BG_COLOR)
-
---- TODO ---
-        w1 = display.chars('%.2f ' % c1, x_tc1, y_upper)
-        w2 = display.chars('%.2f ' % c2, x_tc2, y_upper)
-        w3 = display.chars('%.2f ' % c3, x_tc3, y_lower)
-        wint = display.chars('%.2f ' % max(int1, int2, int3), x_tc2, y_lower)
+        internal_temps = []
+        for (name, (external, internal)) in temperatures.items():
+            internal_temps.append(internal)
+            self.chars('%.2f ' % external, self.tc_x[name],
+                        config.DISPLAY_LOW_BAR_TEXT_Y[name])
+        self.chars('%.2f ' % max(internal_temps),
+                   self.tc_x[config.THERMOCOUPLE_NAME4],
+                   config.DISPLAY_LOW_BAR_TEXT_Y[config.THERMOCOUPLE_NAME4])
