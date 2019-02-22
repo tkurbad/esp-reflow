@@ -32,41 +32,28 @@ class Thermocouple:
     def add_tc(self, name, cs):
         if name is None:
             raise RuntimeError('Thermocouple must have a name')
-        Thermocouple._tcs[name] = MAX31855(busid = Thermocouple._busid, cs = cs))
+        if name in Thermocouple._tcs.keys():
+            raise RuntimeError('Thermocouple %s already added' % name)
+        if Thermocouple._tcs:
+            for (tc_name, tc) in Thermocouple._tcs.items():
+                if ('Pin(%d)' % cs) == str(tc.spi.cs):
+                    raise RuntimeError('Thermocouple "%s" is already configured for cs pin %d'
+                                % (tc_name, cs))
+        Thermocouple._tcs[name] = MAX31855(busid = Thermocouple._busid, cs = cs)
         Thermocouple._temps[name] = (0.0, 0.0)
 
     def remove_tc(self, name):
         if name is None:
             raise RuntimeError('Thermocouple must have a name')
+        if name not in self._tcs.keys():
+            return
         del(Thermocouple._tcs[name])
         del(Thermocouple._temps[name])
 
     def read_temps(self):
-        for tc in Thermocouple._tcs.keys():
+        for (name, tc) in Thermocouple._tcs.items():
             Thermocouple._temps[name] = tc.read()
 
-
---- MOVE!!! ---
-# Setup
-tc1 = MAX31855(busid = HSPI, cs = 15)
-tc2 = MAX31855(busid = HSPI, cs = 2)
-tc3 = MAX31855(busid = HSPI, cs = 4)
-
-
-def tempThread(ip):
-    while True:
-        c1, int1 = tc1.read()
-        c2, int2 = tc2.read()
-        c3, int3 = tc3.read()
-        w1 = display.chars('%.2f ' % c1, x_tc1, y_upper)
-        w2 = display.chars('%.2f ' % c2, x_tc2, y_upper)
-        w3 = display.chars('%.2f ' % c3, x_tc3, y_lower)
-        wint = display.chars('%.2f ' % max(int1, int2, int3), x_tc2, y_lower)
-        if ip != STA().ipaddress:
-            ip = STA().ipaddress
-            display.set_font(tt14)
-            display.chars(ip, x_ip, y_ip)
-            display.set_font(tt24)
-        sleep(1)
-
-_thread.start_new_thread(tempThread, (ip, ))
+    @property
+    def temp(self):
+        return Thermocouple._temps
