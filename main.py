@@ -7,6 +7,7 @@ import config
 
 from display.basic import Display
 from thermocouple.thermocouple import Thermocouple
+from reflow.device import PWMDevice, SwitchedDevice
 from wlan_sta import STA
 
 ##
@@ -16,6 +17,9 @@ from wlan_sta import STA
 # Initialize Display
 tft = Display()
 tft.prepare()
+
+# Set Up Light Switch
+light = SwitchedDevice(config.LIGHT_PIN)
 
 # Initialize SPI bus for thermocouples
 thermocouples = Thermocouple(busid = config.THERMOCOUPLE_BUSID,
@@ -63,3 +67,4 @@ for note in [277, 554, 1109, 2217, 4435]:
     sleep(0.2)
     buzzer.duty(0)
 buzzer.deinit()
+

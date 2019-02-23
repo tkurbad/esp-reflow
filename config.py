@@ -53,3 +53,11 @@ DISPLAY_LOW_BAR_TEXT_Y  = {
     THERMOCOUPLE_NAME3: const(292),
     THERMOCOUPLE_NAME4: const(292)
 }
+
+# Light
+LIGHT_PIN               = const(25)
+
+# Heaters
+HEATER_BOTTOM_PIN       = const(27)
+HEATER_TOP_PIN          = const(26)
+HEATER_PWM_FREQ         = const(25)
