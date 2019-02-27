@@ -39,7 +39,9 @@ class Thermocouple:
                 if ('Pin(%d)' % cs) == str(tc.spi.cs):
                     raise RuntimeError('Thermocouple "%s" is already configured for cs pin %d'
                                 % (tc_name, cs))
-        Thermocouple._tcs[name] = MAX31855(busid = Thermocouple._busid, cs = cs)
+        Thermocouple._tcs[name] = MAX31855(busid = Thermocouple._busid,
+                                           cs = cs,
+                                           baudrate = Thermocouple._baudrate)
         Thermocouple._temps[name] = (0.0, 0.0)
 
     def remove_tc(self, name):
