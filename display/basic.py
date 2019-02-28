@@ -2,8 +2,7 @@
 #
 # Display Class that Does All the Work on the TFT
 
-from ili9341 import ILI9341, color565
-from ili9341.fonts import tt14, tt24
+from ili9341 import ILI9341
 
 import config
 
@@ -43,18 +42,12 @@ class Display(ILI9341):
                             config.DISPLAY_WIDTH,
                             config.DISPLAY_LOW_BAR_HEIGHT,
                             color = config.DISPLAY_STATUS_BG_COLOR)
-        self.set_font(tt14)
+        self.set_font(config.DISPLAY_TOP_BAR_FONT)
         self.ipaddress_x = self.chars('IP ',
                                       config.DISPLAY_TOP_BAR_TEXT_X,
                                       config.DISPLAY_TOP_BAR_TEXT_Y)
-        self.set_font(tt24)
+        self.set_font(config.DISPLAY_LOW_BAR_FONT)
         self.tc_x = dict()
-        for index in range(0:2):
-            self.heater_x[index] = self.chars(
-                                    config.HEATER_LABEL[index],
-                                    config.DISPLAY_HEATER_TEXT_X[index],
-                                    config.DISPLAY_HEATER_TEXT_Y
-                                    )
         for tc_name in [config.THERMOCOUPLE_NAME1,
                         config.THERMOCOUPLE_NAME2,
                         config.THERMOCOUPLE_NAME3,
@@ -64,6 +57,15 @@ class Display(ILI9341):
                                     config.DISPLAY_LOW_BAR_TEXT_X[tc_name],
                                     config.DISPLAY_LOW_BAR_TEXT_Y[tc_name]
                                     )
+        self.set_color(config.DISPLAY_HEATER_FG_COLOR,
+                       config.DISPLAY_HEATER_BG_COLOR)
+        self.heater_x = dict()
+        for heater_name in [config.HEATER_NAME_TOP,
+                            config.HEATER_NAME_BOTTOM]:
+            self.heater_x[heater_name] = self.chars(
+                                            config.HEATER_LABEL[heater_name],
+                                            config.DISPLAY_HEATER_TEXT_X[heater_name],
+                                            config.DISPLAY_HEATER_TEXT_Y)
         self.prepared = True
 
     def show_ipaddress(self, ipaddress):
@@ -71,36 +73,36 @@ class Display(ILI9341):
             return
         self.set_color(config.DISPLAY_STATUS_FG_COLOR,
                        config.DISPLAY_STATUS_BG_COLOR)
-        self.set_font(tt14)
+        self.set_font(config.DISPLAY_TOP_BAR_FONT)
         self.chars('%s   ' % ipaddress,
                    self.ipaddress_x,
                    config.DISPLAY_TOP_BAR_TEXT_Y)
-        self.set_font(tt24)
 
     def show_temperatures(self, temperatures):
         if not self.prepared:
             return
-        if len(temperatures) != 3:
+        if len(temperatures) != config.NUM_THERMOCOUPLES:
             return
         self.set_color(config.DISPLAY_STATUS_FG_COLOR,
                        config.DISPLAY_STATUS_BG_COLOR)
+        self.set_font(config.DISPLAY_LOW_BAR_FONT)
         internal_temps = []
         for (name, (external, internal)) in temperatures.items():
             internal_temps.append(internal)
-            self.chars('%.2f ' % external, self.tc_x[name],
+            self.chars('%6.2f ' % external, self.tc_x[name],
                         config.DISPLAY_LOW_BAR_TEXT_Y[name])
-        self.chars('%.2f ' % max(internal_temps),
+        self.chars('%6.2f ' % max(internal_temps),
                    self.tc_x[config.THERMOCOUPLE_NAME4],
                    config.DISPLAY_LOW_BAR_TEXT_Y[config.THERMOCOUPLE_NAME4])
 
-    def show_heaters(self, heaters_pwm):
+    def show_heaters(self, heater_duty):
         if not self.prepared:
             return
-        if len(heaters_pwm) != 2:
+        if len(heater_duty) != config.NUM_HEATERS:
             return
         self.set_color(config.DISPLAY_HEATER_FG_COLOR,
                        config.DISPLAY_HEATER_BG_COLOR)
-        self.chars('%.1f' % heaters_pwm[0], self.heater_x[0],
-                   config.DISPLAY_HEATER_TEXT_Y)
-        self.chars('%.1f' % heaters_pwm[1], self.heater_x[1],
-                   config.DISPLAY_HEATER_TEXT_Y)
+        self.set_font(config.DISPLAY_LOW_BAR_FONT)
+        for (name, duty) in heater_duty.items():
+            self.chars('%5.1f ' % duty, self.heater_x[name],
+                            config.DISPLAY_HEATER_TEXT_Y)
