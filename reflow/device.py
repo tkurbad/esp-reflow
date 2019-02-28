@@ -1,3 +1,5 @@
+from time import sleep
+
 import config
 
 from reflow.basedevice import PWMDevice, SwitchedDevice
@@ -27,6 +29,14 @@ class Buzzer(PWMDevice):
                          freq = config.BUZZER_NOTE_CSHARP[0],
                          timer = config.BUZZER_PWM_TIMER,
                          duty = 0)
+
+    def jingle(self):
+        """ Play sequence (C#3 - C#8). """
+        with self as buz:
+            buz.duty(config.BUZZER_VOLUME)
+            for octave in range(4, 9):
+                buz.freq(config.BUZZER_NOTE_CSHARP[octave])
+                sleep(0.2)
 
 
 class Fan(PWMDevice):
