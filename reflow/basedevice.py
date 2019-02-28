@@ -64,10 +64,12 @@ class PWMDevice:
         gc.collect()
 
     def duty(self, duty = None):
-        try:
-            return self.pwm.duty(duty)
-        except:
-            return 0.0
+        if duty is None:
+            try:
+                return self.pwm.duty()
+            except:
+                return 0.0
+        self.pwm.duty(float(duty))
 
 
 class SwitchedDevice:
