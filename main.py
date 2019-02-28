@@ -9,7 +9,10 @@ import config
 
 from display.basic import Display
 from thermocouple.thermocouple import Thermocouple
-from reflow import device, sdcard
+from reflow.device import Fan, HeaterBottom, HeaterTop, Light#, Rotary
+from reflow.menu import Menu
+#from sdcard import SDCard
+from reflow.sdcard import SDCard
 from wlan_sta import STA
 
 ##
@@ -39,6 +42,11 @@ thermocouples.add_tc(name = config.THERMOCOUPLE_NAME2,
 thermocouples.add_tc(name = config.THERMOCOUPLE_NAME3,
                      cs = config.THERMOCOUPLE_CS3)
 
+# Set Up Variable to Display Duty Cycles
+heater_duty = {
+    config.HEATER_NAME_TOP: 0.0,
+    config.HEATER_NAME_BOTTOM: 0.0
+}
 ##
 ## Basic Threads
 ##
@@ -70,9 +78,12 @@ def statusDisplayThread(lock):
 
 def heaterDisplayThread(lock):
     """ Display PWM Duty Setting of Both Heaters. """
+    global heater_duty
     while True:
+        heater_duty[config.HEATER_NAME_TOP] = heater_top.duty()
+        heater_duty[config.HEATER_NAME_BOTTOM] = heater_bottom.duty()
         with lock as l:
-            tft.show_temperatures((heater_top.duty(), heater_bottom.duty()))
+            tft.show_heaters(heater_duty)
         sleep(1)
 
 # Start Reading Thermocouples (with Locking)
@@ -99,9 +110,10 @@ heater_bottom = device.HeaterBottom()
 # Set Up Fan
 fan = device.Fan()
 
+# Try to Mount SD Card
 try:
     with tcLock as l:
-        sd = sdcard.SDCard(cs = config.SDCARD_CS)
+        sd = SDCard(cs = config.SDCARD_CS)
 except OSError as e:
     if 'no sd card' in e.args[0].lower():
         print("Initialize regular watch for SD Card (via thread or timer)")
@@ -119,6 +131,11 @@ if sd is not None:
         except OSError:
             pass
 
+# Initialize Menu Display
+menuitems = (,)
+rotary = None
+menu = Menu(menuitems, tft, None)
+
 ##
 ## Main Code
 ##
@@ -126,12 +143,8 @@ if sd is not None:
 # Start Displaying Heater Settings (with Locking)
 _thread.start_new_thread(heaterDisplayThread, (tcLock, ))
 
-# Play sequence (C#3 - C#8)
-with buzzer as buz:
-    buz.duty(config.BUZZER_VOLUME)
-    for octave in range(4, 9):
-        buz.freq(config.BUZZER_NOTE_CSHARP[octave])
-        sleep(0.2)
+# Play Jingle
+buzzer.jingle()
 
 with heater_bottom as hb, heater_top as ht, fan as f, light as li:
     li.on()
@@ -157,5 +170,5 @@ with heater_bottom as hb, heater_top as ht, fan as f, light as li:
 
 heater_bottom.deinit()
 heater_top.deinit()
-#fan.deinit()
+fan.deinit()
 buzzer.deinit()
