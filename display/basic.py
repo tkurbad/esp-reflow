@@ -20,32 +20,38 @@ class Display(ILI9341):
         # Erase
         self.erase()
         # Prepare top and bottom status bars
-        self.set_color(config.DISPLAY_STATUS_FG_COLOR,
-                       config.DISPLAY_STATUS_BG_COLOR)
+        self.set_color(config.DISPLAY_TOP_BAR_FG_COLOR,
+                       config.DISPLAY_TOP_BAR_BG_COLOR)
         self.fill_rectangle(0,
                             config.DISPLAY_TOP_BAR_Y,
                             config.DISPLAY_WIDTH,
                             config.DISPLAY_TOP_BAR_HEIGHT,
-                            color = config.DISPLAY_STATUS_BG_COLOR)
+                            color = config.DISPLAY_TOP_BAR_BG_COLOR)
         self.fill_rectangle(0,
                             config.DISPLAY_HEATER_DELIM_Y,
                             config.DISPLAY_WIDTH,
                             1,
-                            color = config.DISPLAY_STATUS_BG_COLOR)
+                            color = config.DISPLAY_DELIM_COLOR)
         self.fill_rectangle(0,
-                            config.DISPLAY_LOW_BAR_Y1,
+                            config.DISPLAY_LOW_BAR_DELIM_Y,
                             config.DISPLAY_WIDTH,
-                            config.DISPLAY_LOW_BAR_HEIGHT,
-                            color = config.DISPLAY_STATUS_BG_COLOR)
-        self.fill_rectangle(0,
-                            config.DISPLAY_LOW_BAR_Y2,
-                            config.DISPLAY_WIDTH,
-                            config.DISPLAY_LOW_BAR_HEIGHT,
-                            color = config.DISPLAY_STATUS_BG_COLOR)
+                            1,
+                            color = config.DISPLAY_DELIM_COLOR)
         self.set_font(config.DISPLAY_TOP_BAR_FONT)
         self.ipaddress_x = self.chars('IP ',
                                       config.DISPLAY_TOP_BAR_TEXT_X,
                                       config.DISPLAY_TOP_BAR_TEXT_Y)
+        self.set_font(config.DISPLAY_LABEL_FONT)
+        self.set_color(config.DISPLAY_LABEL_FG_COLOR,
+                       config.DISPLAY_LABEL_BG_COLOR)
+        self.chars(config.DISPLAY_HEATER_LABEL,
+                   config.DISPLAY_LABEL_X,
+                   config.DISPLAY_HEATER_LABEL_Y)
+        self.chars(config.DISPLAY_LOW_BAR_LABEL,
+                   config.DISPLAY_LABEL_X,
+                   config.DISPLAY_LOW_BAR_LABEL_Y)
+        self.set_color(config.DISPLAY_THERMOCOUPLE_FG_COLOR,
+                       config.DISPLAY_THERMOCOUPLE_BG_COLOR)
         self.set_font(config.DISPLAY_LOW_BAR_FONT)
         self.tc_x = dict()
         for tc_name in [config.THERMOCOUPLE_NAME1,
@@ -57,6 +63,16 @@ class Display(ILI9341):
                                     config.DISPLAY_LOW_BAR_TEXT_X[tc_name],
                                     config.DISPLAY_LOW_BAR_TEXT_Y[tc_name]
                                     )
+        self.tc_x[config.THERMOCOUPLE_NAME1] = max(
+                                                self.tc_x[config.THERMOCOUPLE_NAME1],
+                                                self.tc_x[config.THERMOCOUPLE_NAME3]
+                                                )
+        self.tc_x[config.THERMOCOUPLE_NAME3] = self.tc_x[config.THERMOCOUPLE_NAME1]
+        self.tc_x[config.THERMOCOUPLE_NAME2] = max(
+                                                self.tc_x[config.THERMOCOUPLE_NAME2],
+                                                self.tc_x[config.THERMOCOUPLE_NAME4]
+                                                )
+        self.tc_x[config.THERMOCOUPLE_NAME4] = self.tc_x[config.THERMOCOUPLE_NAME2]
         self.set_color(config.DISPLAY_HEATER_FG_COLOR,
                        config.DISPLAY_HEATER_BG_COLOR)
         self.heater_x = dict()
@@ -71,8 +87,8 @@ class Display(ILI9341):
     def show_ipaddress(self, ipaddress):
         if not self.prepared:
             return
-        self.set_color(config.DISPLAY_STATUS_FG_COLOR,
-                       config.DISPLAY_STATUS_BG_COLOR)
+        self.set_color(config.DISPLAY_TOP_BAR_FG_COLOR,
+                       config.DISPLAY_TOP_BAR_BG_COLOR)
         self.set_font(config.DISPLAY_TOP_BAR_FONT)
         self.chars('%s   ' % ipaddress,
                    self.ipaddress_x,
@@ -83,15 +99,15 @@ class Display(ILI9341):
             return
         if len(temperatures) != config.NUM_THERMOCOUPLES:
             return
-        self.set_color(config.DISPLAY_STATUS_FG_COLOR,
-                       config.DISPLAY_STATUS_BG_COLOR)
+        self.set_color(config.DISPLAY_THERMOCOUPLE_FG_COLOR,
+                       config.DISPLAY_THERMOCOUPLE_BG_COLOR)
         self.set_font(config.DISPLAY_LOW_BAR_FONT)
         internal_temps = []
         for (name, (external, internal)) in temperatures.items():
             internal_temps.append(internal)
-            self.chars('%6.2f ' % external, self.tc_x[name],
+            self.chars('%5.1f ' % external, self.tc_x[name],
                         config.DISPLAY_LOW_BAR_TEXT_Y[name])
-        self.chars('%6.2f ' % max(internal_temps),
+        self.chars('%5.1f ' % max(internal_temps),
                    self.tc_x[config.THERMOCOUPLE_NAME4],
                    config.DISPLAY_LOW_BAR_TEXT_Y[config.THERMOCOUPLE_NAME4])
 
