@@ -1,7 +1,7 @@
 from micropython import const
 
 from ili9341 import color565
-from ili9341.fonts import tt14, tt24
+from ili9341.fonts import tt14, tt24, verdanab16
 from hwspi.constants import HSPI, VSPI
 
 # Thermocouple Settings
@@ -15,10 +15,10 @@ THERMOCOUPLE_NAME2      = 'tc2'
 THERMOCOUPLE_NAME3      = 'tc3'
 THERMOCOUPLE_NAME4      = 'int'
 THERMOCOUPLE_LABEL      = {
-    THERMOCOUPLE_NAME1: 'T1 ',
-    THERMOCOUPLE_NAME2: 'T2 ',
-    THERMOCOUPLE_NAME3: 'T3 ',
-    THERMOCOUPLE_NAME4: 'Int '
+    THERMOCOUPLE_NAME1: 'TC1 ',
+    THERMOCOUPLE_NAME2: 'TC2 ',
+    THERMOCOUPLE_NAME3: 'TC3 ',
+    THERMOCOUPLE_NAME4: 'Int  '
 }
 NUM_THERMOCOUPLES       = const(3)
 
@@ -37,11 +37,16 @@ DISPLAY_HEIGHT          = const(320)
 DISPLAY_WIDTH           = const(240)
 
 # Display Basic Color / Font Settings
+DISPLAY_BG_COLOR        = color565(0, 0, 0)
+DISPLAY_TOP_BAR_BG_COLOR = color565(200, 200, 200)
+DISPLAY_TOP_BAR_FG_COLOR = DISPLAY_BG_COLOR
+DISPLAY_LOW_BAR_BG_COLOR = DISPLAY_BG_COLOR
+DISPLAY_LOW_BAR_FG_COLOR = color565(200, 200, 200)
+DISPLAY_DELIM_COLOR     = color565(200, 200, 200)
+DISPLAY_LABEL_FG_COLOR  = color565(200, 200, 200)
+DISPLAY_LABEL_BG_COLOR  = color565(0, 0, 0)
 DISPLAY_LABEL_FONT      = tt14
 DISPLAY_LABEL_X         = const(10)
-DISPLAY_BG_COLOR        = color565(0, 0, 0)
-DISPLAY_STATUS_BG_COLOR = color565(200, 200, 200)
-DISPLAY_STATUS_FG_COLOR = DISPLAY_BG_COLOR
 
 # Buzzer
 BUZZER_PIN              = const(0)
@@ -57,8 +62,8 @@ for octave in range(0, 12):
 HEATER_NAME_TOP         = 'top'
 HEATER_NAME_BOTTOM      = 'bottom'
 HEATER_LABEL            = {
-    HEATER_NAME_TOP: 'Top ',
-    HEATER_NAME_BOTTOM: 'Bot '
+    HEATER_NAME_TOP: 'Top  ',
+    HEATER_NAME_BOTTOM: 'Bot   '
 }
 HEATER_BOTTOM_PIN       = const(27)
 HEATER_TOP_PIN          = const(26)
@@ -77,49 +82,51 @@ LIGHT_PIN               = const(25)
 # Status Bar Display Coordinates
 DISPLAY_TOP_BAR_FONT    = tt14
 DISPLAY_LOW_BAR_FONT    = tt24
-DISPLAY_TOP_BAR_LABEL   = 'Heaters'
-DISPLAY_TOP_BAR_LABEL_Y = const(230)
-DISPLAY_LOW_BAR_LABEL   = 'Thermocouples'
+DISPLAY_LOW_BAR_LABEL   = 'Thermocouple Celsius'
 DISPLAY_LOW_BAR_LABEL_Y = const(250)
 DISPLAY_TOP_BAR_Y       = const(0)
-DISPLAY_LOW_BAR_Y1      = const(260)
-DISPLAY_LOW_BAR_Y2      = const(290)
-DISPLAY_TOP_BAR_HEIGHT  = const(19)
-DISPLAY_LOW_BAR_HEIGHT  = const(29)
+DISPLAY_LOW_BAR_DELIM_Y = const(252)
+DISPLAY_TOP_BAR_HEIGHT  = const(18)
 DISPLAY_TOP_BAR_TEXT_X  = const(10)
 DISPLAY_TOP_BAR_TEXT_Y  = const(2)
 DISPLAY_LOW_BAR_TEXT_X  = {
     THERMOCOUPLE_NAME1: const(10),
-    THERMOCOUPLE_NAME2: const(125),
+    THERMOCOUPLE_NAME2: const(127),
     THERMOCOUPLE_NAME3: const(10),
-    THERMOCOUPLE_NAME4: const(125)
+    THERMOCOUPLE_NAME4: const(127)
 }
 DISPLAY_LOW_BAR_TEXT_Y  = {
-    THERMOCOUPLE_NAME1: const(262),
-    THERMOCOUPLE_NAME2: const(262),
-    THERMOCOUPLE_NAME3: const(292),
-    THERMOCOUPLE_NAME4: const(292)
+    THERMOCOUPLE_NAME1: const(265),
+    THERMOCOUPLE_NAME2: const(265),
+    THERMOCOUPLE_NAME3: const(293),
+    THERMOCOUPLE_NAME4: const(293)
 }
+DISPLAY_THERMOCOUPLE_BG_COLOR = DISPLAY_BG_COLOR
+DISPLAY_THERMOCOUPLE_FG_COLOR = color565(220, 220, 220)
 
 # Heater Bar Display Coordinates
 DISPLAY_HEATER_FONT     = tt24
 DISPLAY_HEATER_BG_COLOR = DISPLAY_BG_COLOR
 DISPLAY_HEATER_FG_COLOR = color565(220, 220, 220)
-DISPLAY_HEATER_DELIM_Y  = const(230)
+DISPLAY_HEATER_DELIM_Y  = const(212)
 DISPLAY_HEATER_TEXT_X   = {
     HEATER_NAME_TOP: const(10),
     HEATER_NAME_BOTTOM: const(125)
 }
-DISPLAY_HEATER_TEXT_Y   = const(232)
+DISPLAY_HEATER_TEXT_Y   = const(224)
+DISPLAY_HEATER_LABEL    = 'Heater Activity %'
+DISPLAY_HEATER_LABEL_Y  = const(210)
 
 # Menu Display Settings
-MENU_FONT               = tt14
+MENU_FONT               = verdanab16
 MENU_START_X            = const(5)
 MENU_START_Y            = const(25)
 MENU_WIDTH              = const(230)
 MENU_HEIGHT             = const(180)
-MENU_BG_COLOR           = color565(0, 0, 20)
-MENU_ACTIVE_BG_COLOR    = color565(0, 236, 234)
-MENU_ACTIVE_ITEM_COLOR  = color565(255, 240, 0)
-MENU_INACTIVE_BG_COLOR  = color565(0, 0, 20)
+MENU_ITEM_OFFSET        = const(5)
+MENU_ITEM_SPACING_Y     = const(24)
+MENU_BG_COLOR           = color565(0, 0, 240)
+MENU_ACTIVE_BG_COLOR    = color565(255, 240, 0)
+MENU_ACTIVE_ITEM_COLOR  = color565(0, 0, 240)
+MENU_INACTIVE_BG_COLOR  = color565(0, 0, 240)
 MENU_INACTIVE_ITEM_COLOR = color565(255, 240, 0)
