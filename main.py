@@ -9,7 +9,7 @@ import config
 
 from display.basic import Display
 from thermocouple.thermocouple import Thermocouple
-from reflow.device import Fan, HeaterBottom, HeaterTop, Light#, Rotary
+from reflow.device import Buzzer, Fan, HeaterBottom, HeaterTop, Light#, Rotary
 from reflow.menu import Menu
 #from sdcard import SDCard
 from reflow.sdcard import SDCard
@@ -28,7 +28,7 @@ tft = Display()
 tft.prepare()
 
 # Set Up Light Switch
-light = device.Light()
+light = Light()
 
 # Initialize SPI bus for thermocouples
 thermocouples = Thermocouple(busid = config.THERMOCOUPLE_BUSID,
@@ -51,8 +51,8 @@ heater_duty = {
 ## Basic Threads
 ##
 
-# Allocate a lock for thermocouple related threads
-tcLock = _thread.allocate_lock()
+# Allocate a lock
+reflowLock = _thread.allocate_lock()
 
 # Get and Display IP Address
 ipaddress = STA().ipaddress
@@ -87,9 +87,9 @@ def heaterDisplayThread(lock):
         sleep(1)
 
 # Start Reading Thermocouples (with Locking)
-_thread.start_new_thread(thermocoupleReadThread, (tcLock, ))
+_thread.start_new_thread(thermocoupleReadThread, (reflowLock, ))
 # Start Displaying Satus (with Locking)
-_thread.start_new_thread(statusDisplayThread, (tcLock, ))
+_thread.start_new_thread(statusDisplayThread, (reflowLock, ))
 
 # Run Garbage Collector
 gc.collect()
@@ -99,20 +99,20 @@ gc.collect()
 ##
 
 # Set Up Buzzer
-buzzer = device.Buzzer()
+buzzer = Buzzer()
 
 # Set Up Top Heater
-heater_top = device.HeaterTop()
+heater_top = HeaterTop()
 
 # Set Up Bottom Heater
-heater_bottom = device.HeaterBottom()
+heater_bottom = HeaterBottom()
 
 # Set Up Fan
-fan = device.Fan()
+fan = Fan()
 
 # Try to Mount SD Card
 try:
-    with tcLock as l:
+    with reflowLock as l:
         sd = SDCard(cs = config.SDCARD_CS)
 except OSError as e:
     if 'no sd card' in e.args[0].lower():
@@ -124,7 +124,7 @@ if sd is not None:
         SD_CARD_MOUNTED = True
     except OSError:
         try:
-            with tcLock as l:
+            with reflowLock as l:
                 sd.init_card_v1()
             mount(sd, '/sd')
             SD_CARD_MOUNTED = True
@@ -132,16 +132,24 @@ if sd is not None:
             pass
 
 # Initialize Menu Display
-menuitems = (,)
+menuitems = (
+    ('hallo', None),
+    ('ballo', None),
+    ('popallo', None),
+    ('fan', None),
+)
+
 rotary = None
-menu = Menu(menuitems, tft, None)
+menu = Menu(menuitems, tft, rotary, lock = reflowLock)
+menu.draw_items()
+
 
 ##
 ## Main Code
 ##
 
 # Start Displaying Heater Settings (with Locking)
-_thread.start_new_thread(heaterDisplayThread, (tcLock, ))
+_thread.start_new_thread(heaterDisplayThread, (reflowLock, ))
 
 # Play Jingle
 buzzer.jingle()
