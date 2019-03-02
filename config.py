@@ -76,6 +76,16 @@ FAN_PIN                 = const(32)
 FAN_PWM_FREQ            = const(500)
 FAN_PWM_TIMER           = const(3)
 
+# Rotary Encoder
+ROTARY_CLK_PIN          = const(17)
+ROTARY_DT_PIN           = const(16)
+ROTARY_PUSH_PIN         = const(5)
+ROTARY_MIN_VAL          = const(0)
+ROTARY_MAX_VAL          = const(10)
+ROTARY_RANGE_UNBOUNDED  = const(1)
+ROTARY_RANGE_WRAP       = const(2)
+ROTARY_RANGE_BOUNDED    = const(3)
+
 # Light
 LIGHT_PIN               = const(25)
 

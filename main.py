@@ -3,13 +3,13 @@ import _thread
 
 from machine import Pin, PWM, reset
 from os import mount, umount
-from time import sleep
+from time import sleep, sleep_ms
 
 import config
 
 from display.basic import Display
 from thermocouple.thermocouple import Thermocouple
-from reflow.device import Buzzer, Fan, HeaterBottom, HeaterTop, Light#, Rotary
+from reflow.device import Buzzer, Fan, HeaterBottom, HeaterTop, Light, RotaryEncoder
 from reflow.menu import Menu
 #from sdcard import SDCard
 from reflow.sdcard import SDCard
@@ -110,6 +110,7 @@ heater_bottom = HeaterBottom()
 # Set Up Fan
 fan = Fan()
 
+
 # Try to Mount SD Card
 try:
     with reflowLock as l:
@@ -139,7 +140,9 @@ menuitems = (
     ('fan', None),
 )
 
-rotary = None
+# Set Up Rotary Encoder
+rotary = RotaryEncoder()
+
 menu = Menu(menuitems, tft, rotary, lock = reflowLock)
 menu.draw_items()
 
@@ -175,6 +178,16 @@ with heater_bottom as hb, heater_top as ht, fan as f, light as li:
 #    heater_top.deinit()
 #    fan.deinit()
 #    buzzer.deinit()
+lastval, lastbutton = rotary.value()
+while True:
+    val, butstate = rotary.value()
+    if butstate != lastbutton:
+        lastbutton = butstate
+        print('Button:', butstate)
+    if val != lastval:
+        lastval = val
+        print('Value:', val)
+    sleep_ms(50)
 
 heater_bottom.deinit()
 heater_top.deinit()

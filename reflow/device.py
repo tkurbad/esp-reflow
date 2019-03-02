@@ -2,7 +2,7 @@ from time import sleep
 
 import config
 
-from reflow.basedevice import PWMDevice, SwitchedDevice
+from reflow.basedevice import PWMDevice, Rotary, SwitchedDevice
 
 
 class Heater(PWMDevice):
@@ -46,6 +46,14 @@ class Fan(PWMDevice):
                          timer = config.FAN_PWM_TIMER,
                          duty = 0)
 
+
+class RotaryEncoder(Rotary):
+    def __init__(self):
+        super().__init__(config.ROTARY_CLK_PIN,
+                         config.ROTARY_DT_PIN,
+                         config.ROTARY_PUSH_PIN,
+                         config.ROTARY_MIN_VAL,
+                         config.ROTARY_MAX_VAL)
 
 class Light(SwitchedDevice):
     def __init__(self):
