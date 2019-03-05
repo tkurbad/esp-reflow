@@ -1,3 +1,7 @@
+# Config File for ESP32 Micropython Driven SMD Reflow Oven
+#
+# MIT license; Copyright (c) 2019 Torsten Kurbad
+
 from micropython import const
 
 from ili9341 import color565
@@ -5,138 +9,144 @@ from ili9341.fonts import tt14, tt24, verdanab16
 from hwspi.constants import HSPI, VSPI
 
 # Thermocouple Settings
-THERMOCOUPLE_BUSID      = HSPI
-THERMOCOUPLE_BAUDRATE   = const(1320000)
-THERMOCOUPLE_CS1        = const(15)
-THERMOCOUPLE_CS2        = const(2)
-THERMOCOUPLE_CS3        = const(4)
-THERMOCOUPLE_NAME1      = 'tc1'
-THERMOCOUPLE_NAME2      = 'tc2'
-THERMOCOUPLE_NAME3      = 'tc3'
-THERMOCOUPLE_NAME4      = 'int'
+THERMOCOUPLE_BUSID      = HSPI              # Hardware SPI Bus Id for Thermocouples
+THERMOCOUPLE_BAUDRATE   = const(1320000)    # Baudrate for Thermocouple Reads
+THERMOCOUPLE_CS1        = const(15)         # Chip Select Pin Number for 1st Thermocouple
+THERMOCOUPLE_CS2        = const(2)          # Chip Select Pin Number for 2nd Thermocouple
+THERMOCOUPLE_CS3        = const(4)          # Chip Select Pin Number for 3rd Thermocouple
+THERMOCOUPLE_NAME1      = 'tc1'             # Index Name for 1st Thermocouple
+THERMOCOUPLE_NAME2      = 'tc2'             # Index Name for 2nd Thermocouple
+THERMOCOUPLE_NAME3      = 'tc3'             # Index Name for 3rd Thermocouple
+THERMOCOUPLE_NAME4      = 'int'             # Index Name for MAX31855 Internal Temperature Sensor
 THERMOCOUPLE_LABEL      = {
-    THERMOCOUPLE_NAME1: 'TC1 ',
-    THERMOCOUPLE_NAME2: 'TC2 ',
-    THERMOCOUPLE_NAME3: 'TC3 ',
-    THERMOCOUPLE_NAME4: 'Int  '
+    THERMOCOUPLE_NAME1: 'TC1 ',             # Label for 1st Thermocouple
+    THERMOCOUPLE_NAME2: 'TC2 ',             # Label for 2nd Thermocouple
+    THERMOCOUPLE_NAME3: 'TC3 ',             # Label for 3rd Thermocouple
+    THERMOCOUPLE_NAME4: 'Int  '             # Label for MAX31855 Internal Temperature Sensor
 }
-NUM_THERMOCOUPLES       = const(3)
+NUM_THERMOCOUPLES       = const(3)          # Number of Physically Connected Thermocouples
 
 # SD Card Settings
-SDCARD_BUSID            = HSPI
-SDCARD_BAUDRATE         = THERMOCOUPLE_BAUDRATE
-SDCARD_CS               = const(33)
+SDCARD_BUSID            = HSPI              # Hardware SPI Bus Id for SD Card
+SDCARD_BAUDRATE         = THERMOCOUPLE_BAUDRATE # Baudrate for SD Card Reads / Writes
+SDCARD_CS               = const(33)         # Chip Select Pin Number for SD Card
 
-# Display Hardware Settings
-DISPLAY_BUSID           = VSPI
-DISPLAY_BAUDRATE        = const(50000000)
-DISPLAY_DC_PIN          = const(21)
-DISPLAY_CS_PIN          = const(22)
+# TFT Display Hardware Settings
+DISPLAY_BUSID           = VSPI              # Hardware SPI Bus Id for TFT Display
+DISPLAY_BAUDRATE        = const(50000000)   # Baudrate for TFT Display Reads / Writes
+DISPLAY_DC_PIN          = const(21)         # Data/Command Pin Number for TFT Display
+DISPLAY_CS_PIN          = const(22)         # Chip Select Pin Number for TFT Display
 
-DISPLAY_HEIGHT          = const(320)
-DISPLAY_WIDTH           = const(240)
+DISPLAY_HEIGHT          = const(320)        # Height of TFT Display in Pixels
+DISPLAY_WIDTH           = const(240)        # Width of TFT Display in Pixels
 
 # Display Basic Color / Font Settings
-DISPLAY_BG_COLOR        = color565(0, 0, 0)
-DISPLAY_TOP_BAR_BG_COLOR = color565(200, 200, 200)
-DISPLAY_TOP_BAR_FG_COLOR = DISPLAY_BG_COLOR
-DISPLAY_LOW_BAR_BG_COLOR = DISPLAY_BG_COLOR
-DISPLAY_LOW_BAR_FG_COLOR = color565(200, 200, 200)
-DISPLAY_DELIM_COLOR     = color565(200, 200, 200)
-DISPLAY_LABEL_FG_COLOR  = color565(200, 200, 200)
-DISPLAY_LABEL_BG_COLOR  = color565(0, 0, 0)
-DISPLAY_LABEL_FONT      = tt14
-DISPLAY_LABEL_X         = const(10)
+DISPLAY_BG_COLOR        = color565(0, 0, 0)         # Standard Background Color
+#  Top Status Bar (IP Address, SD Card Status, ...)
+DISPLAY_TOP_BAR_BG_COLOR = color565(200, 200, 200)  # Top Status Bar Background Color
+DISPLAY_TOP_BAR_FG_COLOR = DISPLAY_BG_COLOR         # Top Status Bar Foreground Color
+#  Bottom Status Bars (Heater Activity, Thermocouple Readings)
+DISPLAY_LOW_BAR_BG_COLOR = DISPLAY_BG_COLOR         # Lower Status Bars Background Color
+DISPLAY_LOW_BAR_FG_COLOR = color565(200, 200, 200)  # Lower Status Bars Foreground Color
+#  Delimiters Between Bottom Status Bars
+DISPLAY_DELIM_COLOR     = color565(200, 200, 200)   # Horizontal Delimiter Line Color
+#  Bottom Status Bar Label Settings ('Heater Activity %', 'Thermocouple Celsius', ...)
+DISPLAY_LABEL_FG_COLOR  = color565(200, 200, 200)   # Label Foreground Color
+DISPLAY_LABEL_BG_COLOR  = color565(0, 0, 0)         # Label Background Color
+DISPLAY_LABEL_FONT      = tt14                      # Label Font
+DISPLAY_LABEL_X         = const(10)                 # Label Horizontal Start Coordinate
 
 # Buzzer
-BUZZER_PIN              = const(0)
-BUZZER_PWM_TIMER        = const(1)
-BUZZER_VOLUME           = 30.0
-BUZZER_NOTE_CSHARP      = dict()
-_CSHARP_BASE            = 17.323914
-for octave in range(0, 12):
+BUZZER_PIN              = const(0)          # Buzzer Pin Number
+BUZZER_PWM_TIMER        = const(1)          # Buzzer PWM Timer Number
+BUZZER_VOLUME           = 30.0              # Buzzer PWM Duty Cycle (if On)
+BUZZER_NOTE_CSHARP      = dict()            # Initialize Buzzer C# Notes Frequency Dictionary
+_CSHARP_BASE            = 17.323914         # C#0 Frequency
+for octave in range(0, 12):                 # Store Frequencies for C#0 to C#12 in Dictionary
     BUZZER_NOTE_CSHARP[octave] = const(int(round(_CSHARP_BASE)))
     _CSHARP_BASE        *= 2
 
 # Heaters
-HEATER_NAME_TOP         = 'top'
-HEATER_NAME_BOTTOM      = 'bottom'
+HEATER_NAME_BOTTOM      = 'bottom'          # Bottom Heater Index Name
+HEATER_NAME_TOP         = 'top'             # Top Heater Index Name
 HEATER_LABEL            = {
-    HEATER_NAME_TOP: 'Top  ',
-    HEATER_NAME_BOTTOM: 'Bot   '
+    HEATER_NAME_BOTTOM: 'Bot   ',           # Bottom Heater Label
+    HEATER_NAME_TOP: 'Top  '                # Top Heater Label
 }
-HEATER_BOTTOM_PIN       = const(27)
-HEATER_TOP_PIN          = const(26)
-HEATER_PWM_FREQ         = const(5)
-HEATER_PWM_TIMER        = const(2)
-NUM_HEATERS             = const(2)
+HEATER_BOTTOM_PIN       = const(27)         # Bottom Heater Pin Number
+HEATER_TOP_PIN          = const(26)         # Top Heater Pin Number
+HEATER_PWM_FREQ         = const(5)          # PWM Frequency for All Heaters
+HEATER_PWM_TIMER        = const(2)          # PWM Timer Number for All Heaters
+NUM_HEATERS             = const(2)          # Number of Physically Connected Heaters
 
 # Fan
-FAN_PIN                 = const(32)
-FAN_PWM_FREQ            = const(500)
-FAN_PWM_TIMER           = const(3)
+FAN_PIN                 = const(32)         # Fan Pin Number
+FAN_PWM_FREQ            = const(500)        # Fan PWM Frequency
+FAN_PWM_TIMER           = const(3)          # Fan PWM Timer Number
 
 # Rotary Encoder
-ROTARY_CLK_PIN          = const(17)
-ROTARY_DT_PIN           = const(16)
-ROTARY_PUSH_PIN         = const(5)
-ROTARY_MIN_VAL          = const(0)
-ROTARY_MAX_VAL          = const(10)
-ROTARY_RANGE_UNBOUNDED  = const(1)
-ROTARY_RANGE_WRAP       = const(2)
-ROTARY_RANGE_BOUNDED    = const(3)
+ROTARY_CLK_PIN          = const(17)         # Rotary Encoder CLK (A) Pin Number
+ROTARY_DT_PIN           = const(16)         # Rotary Encoder DT (B) Pin Number
+ROTARY_PUSH_PIN         = const(5)          # Rotary Encoder Push Button Pin Number
+ROTARY_MIN_VAL          = const(0)          # Default Minimum Value of Encoder when Bounded
+ROTARY_MAX_VAL          = const(10)         # Default Maximum Value of Encoder when Bounded
+ROTARY_RANGE_UNBOUNDED  = const(1)          # Encoder Value Range is -MAXINT..MAXINT
+ROTARY_RANGE_WRAP       = const(2)          # Encoder Value Range is ROTARY_MIN_VAL..ROTARY_MAX_VAL w/ Wraparound
+ROTARY_RANGE_BOUNDED    = const(3)          # Encoder Value Range is ROTARY_MIN_VAL..ROTARY_MAX_VAL w/o Wraparound
 
 # Light
-LIGHT_PIN               = const(25)
+LIGHT_PIN               = const(25)         # Light Switch Pin Number
 
-# Status Bar Display Coordinates
-DISPLAY_TOP_BAR_FONT    = tt14
-DISPLAY_LOW_BAR_FONT    = tt24
-DISPLAY_LOW_BAR_LABEL   = 'Thermocouple Celsius'
-DISPLAY_LOW_BAR_LABEL_Y = const(250)
-DISPLAY_TOP_BAR_Y       = const(0)
-DISPLAY_LOW_BAR_DELIM_Y = const(252)
-DISPLAY_TOP_BAR_HEIGHT  = const(18)
-DISPLAY_TOP_BAR_TEXT_X  = const(10)
-DISPLAY_TOP_BAR_TEXT_Y  = const(2)
-DISPLAY_LOW_BAR_TEXT_X  = {
-    THERMOCOUPLE_NAME1: const(10),
-    THERMOCOUPLE_NAME2: const(127),
-    THERMOCOUPLE_NAME3: const(10),
-    THERMOCOUPLE_NAME4: const(127)
+# TFT Display Status Settings
+#  General
+DISPLAY_TOP_BAR_FONT    = tt14              # Top Status Bar Font
+DISPLAY_LOW_BAR_FONT    = tt24              # Bottom Status Bars Font
+#  Top Status Bar
+DISPLAY_TOP_BAR_Y       = const(0)          # Top Status Bar Vertical Start Coordinate
+DISPLAY_TOP_BAR_HEIGHT  = const(18)         # Top Status Bar Height
+DISPLAY_TOP_BAR_TEXT_X  = const(10)         # Top Status Bar Horizontal Text Start Coordinate
+DISPLAY_TOP_BAR_TEXT_Y  = const(2)          # Top Status Bar Vertical Text Start Coordinate
+#  Heater Status Bar
+DISPLAY_HEATER_FONT     = tt24              # Heater Status Bar Font
+DISPLAY_HEATER_LABEL    = 'Heater Activity %'       # Heater Status Label
+DISPLAY_HEATER_LABEL_Y  = const(210)        # Heater Status Label Vertical Start Coordinate
+DISPLAY_HEATER_DELIM_Y  = const(212)        # Heater Status Delimiter Line Vertical Coordinate
+DISPLAY_HEATER_TEXT_X   = {                 # Status Text Horizontal Start Coordinates...
+    HEATER_NAME_BOTTOM: const(125),         # ... for Bottom Heater
+    HEATER_NAME_TOP: const(10)              # ... for Top Heater
 }
-DISPLAY_LOW_BAR_TEXT_Y  = {
-    THERMOCOUPLE_NAME1: const(265),
-    THERMOCOUPLE_NAME2: const(265),
-    THERMOCOUPLE_NAME3: const(293),
-    THERMOCOUPLE_NAME4: const(293)
+DISPLAY_HEATER_TEXT_Y   = const(224)        # Heater Status Text Vertical Start Coordinate
+DISPLAY_HEATER_BG_COLOR = DISPLAY_BG_COLOR          # Heater Status Bar Background Color
+DISPLAY_HEATER_FG_COLOR = color565(220, 220, 220)   # Heater Status Bar Foreground Color
+#  Thermocouple Status Bars
+DISPLAY_LOW_BAR_LABEL   = 'Thermocouple Celsius'    # Thermocouple Status Label
+DISPLAY_LOW_BAR_LABEL_Y = const(250)        # Thermocouple Status Label Vertical Start Coordinate
+DISPLAY_LOW_BAR_DELIM_Y = const(252)        # Thermocouple Status Delimiter Line Vertical Coordinate
+DISPLAY_LOW_BAR_TEXT_X  = {                 # Status Text Horizontal Start Coordinates...
+    THERMOCOUPLE_NAME1: const(10),          # ... for 1st Thermocouple Label
+    THERMOCOUPLE_NAME2: const(127),         # ... for 2nd Thermocouple Label
+    THERMOCOUPLE_NAME3: const(10),          # ... for 3rd Thermocouple Label
+    THERMOCOUPLE_NAME4: const(127)          # ... for MAX31855 Internal Sensor Label
 }
-DISPLAY_THERMOCOUPLE_BG_COLOR = DISPLAY_BG_COLOR
-DISPLAY_THERMOCOUPLE_FG_COLOR = color565(220, 220, 220)
+DISPLAY_LOW_BAR_TEXT_Y  = {                 # Status Text Vertical Start Coordinates...
+    THERMOCOUPLE_NAME1: const(265),         # ... for 1st Thermocouple Label
+    THERMOCOUPLE_NAME2: const(265),         # ... for 2nd Thermocouple Label
+    THERMOCOUPLE_NAME3: const(293),         # ... for 3rd Thermocouple Label
+    THERMOCOUPLE_NAME4: const(293)          # ... for MAX31855 Internal Sensor Label
+}
+DISPLAY_THERMOCOUPLE_BG_COLOR = DISPLAY_BG_COLOR        # Thermocouple Status Background Color
+DISPLAY_THERMOCOUPLE_FG_COLOR = color565(220, 220, 220) # Thermocouple Status Foreground Color
 
-# Heater Bar Display Coordinates
-DISPLAY_HEATER_FONT     = tt24
-DISPLAY_HEATER_BG_COLOR = DISPLAY_BG_COLOR
-DISPLAY_HEATER_FG_COLOR = color565(220, 220, 220)
-DISPLAY_HEATER_DELIM_Y  = const(212)
-DISPLAY_HEATER_TEXT_X   = {
-    HEATER_NAME_TOP: const(10),
-    HEATER_NAME_BOTTOM: const(125)
-}
-DISPLAY_HEATER_TEXT_Y   = const(224)
-DISPLAY_HEATER_LABEL    = 'Heater Activity %'
-DISPLAY_HEATER_LABEL_Y  = const(210)
-
-# Menu Display Settings
-MENU_FONT               = verdanab16
-MENU_START_X            = const(5)
-MENU_START_Y            = const(25)
-MENU_WIDTH              = const(230)
-MENU_HEIGHT             = const(180)
-MENU_ITEM_OFFSET        = const(5)
-MENU_ITEM_SPACING_Y     = const(24)
-MENU_BG_COLOR           = color565(0, 0, 240)
-MENU_ACTIVE_BG_COLOR    = color565(255, 240, 0)
-MENU_ACTIVE_ITEM_COLOR  = color565(0, 0, 240)
-MENU_INACTIVE_BG_COLOR  = color565(0, 0, 240)
-MENU_INACTIVE_ITEM_COLOR = color565(255, 240, 0)
+# TFT Display Menu Settings
+MENU_FONT               = verdanab16        # Menu Font
+MENU_START_X            = const(5)          # Menu Area Horizontal Start Coordinate
+MENU_START_Y            = const(25)         # Menu Area Vertical Start Coordinate
+MENU_HEIGHT             = const(180)        # Menu Area Height in Pixels
+MENU_WIDTH              = const(230)        # Menu Area Width in Pixels
+MENU_ITEM_OFFSET        = const(5)          # Menu Item Offset from Horiz./Vert. Start of Menu Area
+MENU_ITEM_SPACING_Y     = const(24)         # Vertical Spacing Between Menu Items
+MENU_BG_COLOR           = color565(0, 0, 240)       # Menu Area Background Color
+MENU_ACTIVE_BG_COLOR    = color565(255, 240, 0)     # Active Menu Item Background Color
+MENU_ACTIVE_ITEM_COLOR  = color565(0, 0, 240)       # Active Menu Item Text Color
+MENU_INACTIVE_BG_COLOR  = color565(0, 0, 240)       # Inactive Menu Item Background Color
+MENU_INACTIVE_ITEM_COLOR = color565(255, 240, 0)    # Inactive Menu Item Text Color
