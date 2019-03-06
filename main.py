@@ -23,7 +23,7 @@ from wlan_sta import STA
 ##
 
 # SD Card Present?
-SD_CARD_MOUNTED = False
+sdcard_mounted = False
 
 # Initialize Display
 tft = Display()
@@ -99,14 +99,20 @@ def heatReadThread(lock):
 
 def statusDisplayThread(lock):
     """ Display Status, i.e. IP-Address and Temperatures on TFT. """
-    global ipaddress
+    global ipaddress, sdcard_mounted
+    with lock as l:
+        tft.show_ipaddress(ipaddress)
+
     while True:
         with lock as l:
-            tft.show_heaters(heater_duty)
             tft.show_temperatures(thermocouples.temp)
+            tft.show_heaters(heater_duty)
             if ipaddress != STA().ipaddress:
                 ipaddress = STA().ipaddress
                 tft.show_ipaddress(ipaddress)
+            tft.show_fan(fan.duty())
+            tft.show_light(light.pin.value())
+            tft.show_sdcard(sdcard_mounted)
         sleep(1)
 
 # Start Reading Heat Values (with Locking)
@@ -119,7 +125,7 @@ gc.collect()
 
 # Initialize and Try to Mount SD Card
 sdcard = SDCardHandler()
-SD_CARD_MOUNTED = sdcard.mount()
+sdcard_mounted = sdcard.mount()
 
 ##
 ## Main Code
@@ -131,20 +137,6 @@ menu.draw_items()
 # Play Jingle
 buzzer.jingle()
 
-# with heater_bottom as hb, heater_top as ht, fan as f, light as li:
-    # li.on()
-    # hb.duty(100)
-    # ht.duty(50)
-    # f.duty(20)
-    # sleep(20)
-    # hb.duty(30)
-    # ht.duty(100)
-    # sleep(10)
-    # hb.duty(10)
-    # ht.duty(10)
-    # sleep(10)
-
-
 ###
 # IDEE:
 # Callback-Funktionen / IRQ-Handler fuer Rotary konfigurierbar machen
@@ -154,7 +146,21 @@ buzzer.jingle()
 ##
 # TODO:
 # - SD-Karten Filebrowser
-# - Symbole Fan/Licht/SD
+
+with heater_bottom as hb, heater_top as ht, fan as fa, light as li:
+    li.on()
+    fa.duty(20)
+    hb.duty(10)
+    ht.duty(100)
+    sleep(10)
+    fa.duty(50)
+    hb.duty(50)
+    ht.duty(50)
+    sleep(10)
+    fa.duty(10)
+    hb.duty(100)
+    ht.duty(100)
+    sleep(10)
 
 try:
     """ Handle Menu Input. """
