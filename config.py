@@ -5,6 +5,8 @@
 from micropython import const
 
 from ili9341 import color565
+from ili9341.constants import DEFAULT_BAUDRATE, DEFAULT_CS_PIN, DEFAULT_DC_PIN
+from ili9341.constants import DEFAULT_HEIGHT, DEFAULT_WIDTH
 from ili9341.fonts import tt14, tt24, verdanab16
 from hwspi.constants import HSPI, VSPI
 
@@ -33,12 +35,12 @@ SDCARD_CS               = const(33)         # Chip Select Pin Number for SD Card
 
 # TFT Display Hardware Settings
 DISPLAY_BUSID           = VSPI              # Hardware SPI Bus Id for TFT Display
-DISPLAY_BAUDRATE        = const(50000000)   # Baudrate for TFT Display Reads / Writes
-DISPLAY_DC_PIN          = const(21)         # Data/Command Pin Number for TFT Display
-DISPLAY_CS_PIN          = const(22)         # Chip Select Pin Number for TFT Display
+DISPLAY_BAUDRATE        = DEFAULT_BAUDRATE  # Baudrate for TFT Display Reads / Writes
+DISPLAY_DC_PIN          = DEFAULT_DC_PIN    # Data/Command Pin Number for TFT Display
+DISPLAY_CS_PIN          = DEFAULT_CS_PIN    # Chip Select Pin Number for TFT Display
 
-DISPLAY_HEIGHT          = const(320)        # Height of TFT Display in Pixels
-DISPLAY_WIDTH           = const(240)        # Width of TFT Display in Pixels
+DISPLAY_HEIGHT          = DEFAULT_HEIGHT    # Height of TFT Display in Pixels
+DISPLAY_WIDTH           = DEFAULT_WIDTH     # Width of TFT Display in Pixels
 
 # Display Basic Color / Font Settings
 DISPLAY_BG_COLOR        = color565(0, 0, 0)         # Standard Background Color
@@ -106,6 +108,9 @@ DISPLAY_TOP_BAR_Y       = const(0)          # Top Status Bar Vertical Start Coor
 DISPLAY_TOP_BAR_HEIGHT  = const(18)         # Top Status Bar Height
 DISPLAY_TOP_BAR_TEXT_X  = const(10)         # Top Status Bar Horizontal Text Start Coordinate
 DISPLAY_TOP_BAR_TEXT_Y  = const(2)          # Top Status Bar Vertical Text Start Coordinate
+DISPLAY_FAN_ICON_X      = const(145)        # Top Status Bar Cooling Fan Icon Horizontal Start Coordinate
+DISPLAY_LIGHT_ICON_X    = const(202)        # Top Status Bar Light Indicator Icon Horizontal Start Coordinate
+DISPLAY_SD_ICON_X       = const(220)        # Top Status Bar SD Card Icon Horizontal Start Coordinate
 #  Heater Status Bar
 DISPLAY_HEATER_FONT     = tt24              # Heater Status Bar Font
 DISPLAY_HEATER_LABEL    = 'Heater Activity %'       # Heater Status Label
