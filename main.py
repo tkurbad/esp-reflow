@@ -146,6 +146,7 @@ buzzer.jingle()
 ##
 # TODO:
 # - SD-Karten Filebrowser
+# - File-Headers ili9341 Modul
 
 with heater_bottom as hb, heater_top as ht, fan as fa, light as li:
     li.on()
