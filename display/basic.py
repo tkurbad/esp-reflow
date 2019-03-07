@@ -4,6 +4,7 @@
 
 from ili9341 import ILI9341
 from display.icon import AnimatedFanIcon, FanIcon, LightbulbIcon, SDIcon
+from display.icon import DegreeSymbol
 
 import config
 
@@ -64,8 +65,17 @@ class Display(ILI9341):
                    config.DISPLAY_LABEL_X,
                    config.DISPLAY_HEATER_LABEL_Y)
         # Thermocouple Status Bar Label
-        self.chars(config.DISPLAY_LOW_BAR_LABEL,
-                   config.DISPLAY_LABEL_X,
+        low_bar_label_x = self.chars(config.DISPLAY_LOW_BAR_LABEL1,
+                                     config.DISPLAY_LABEL_X,
+                                     config.DISPLAY_LOW_BAR_LABEL_Y)
+        degree_symbol = DegreeSymbol()
+        self.bitmap(degree_symbol.data,
+                    low_bar_label_x,
+                    config.DISPLAY_LOW_BAR_LABEL_Y,
+                    degree_symbol.width,
+                    degree_symbol.height)
+        self.chars(config.DISPLAY_LOW_BAR_LABEL2,
+                   low_bar_label_x + degree_symbol.width,
                    config.DISPLAY_LOW_BAR_LABEL_Y)
         # Thermocouple Names
         self.set_color(config.DISPLAY_THERMOCOUPLE_FG_COLOR,

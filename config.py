@@ -124,7 +124,8 @@ DISPLAY_HEATER_TEXT_Y   = const(224)        # Heater Status Text Vertical Start 
 DISPLAY_HEATER_BG_COLOR = DISPLAY_BG_COLOR          # Heater Status Bar Background Color
 DISPLAY_HEATER_FG_COLOR = color565(220, 220, 220)   # Heater Status Bar Foreground Color
 #  Thermocouple Status Bars
-DISPLAY_LOW_BAR_LABEL   = 'Thermocouple Celsius'    # Thermocouple Status Label
+DISPLAY_LOW_BAR_LABEL1  = 'Thermocouple '   # Thermocouple Status Label Part 1
+DISPLAY_LOW_BAR_LABEL2  = 'C'               # Thermocouple Status Label Part 2
 DISPLAY_LOW_BAR_LABEL_Y = const(250)        # Thermocouple Status Label Vertical Start Coordinate
 DISPLAY_LOW_BAR_DELIM_Y = const(252)        # Thermocouple Status Delimiter Line Vertical Coordinate
 DISPLAY_LOW_BAR_TEXT_X  = {                 # Status Text Horizontal Start Coordinates...
