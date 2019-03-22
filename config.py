@@ -68,6 +68,11 @@ for octave in range(0, 12):                 # Store Frequencies for C#0 to C#12 
     BUZZER_NOTE_CSHARP[octave] = const(int(round(_CSHARP_BASE)))
     _CSHARP_BASE        *= 2
 
+# Fan
+FAN_PIN                 = const(32)         # Fan Pin Number
+FAN_PWM_FREQ            = const(500)        # Fan PWM Frequency
+FAN_PWM_TIMER           = const(3)          # Fan PWM Timer Number
+
 # Heaters
 HEATER_NAME_BOTTOM      = 'bottom'          # Bottom Heater Index Name
 HEATER_NAME_TOP         = 'top'             # Top Heater Index Name
@@ -81,10 +86,14 @@ HEATER_PWM_FREQ         = const(5)          # PWM Frequency for All Heaters
 HEATER_PWM_TIMER        = const(2)          # PWM Timer Number for All Heaters
 NUM_HEATERS             = const(2)          # Number of Physically Connected Heaters
 
-# Fan
-FAN_PIN                 = const(32)         # Fan Pin Number
-FAN_PWM_FREQ            = const(500)        # Fan PWM Frequency
-FAN_PWM_TIMER           = const(3)          # Fan PWM Timer Number
+# Light
+LIGHT_PIN               = const(25)         # Light Switch Pin Number
+
+# Push Buttons
+DOWN_PUSHBUTTON_PIN     = const(34)         # Lowermost Pushbutton (Button #3) Pin Number
+LEFT_PUSHBUTTON_PIN     = const(35)         # Leftmost Pushbutton (Button #4) Pin Number
+RIGHT_PUSHBUTTON_PIN    = const(36)         # Rightmost Pushbutton Pin (Button #1) Pin Number
+UP_PUSHBUTTON_PIN       = const(39)         # Topmost Pushbutton (Button #2) Pin Number
 
 # Rotary Encoder
 ROTARY_CLK_PIN          = const(17)         # Rotary Encoder CLK (A) Pin Number
@@ -95,9 +104,6 @@ ROTARY_MAX_VAL          = const(10)         # Default Maximum Value of Encoder w
 ROTARY_RANGE_UNBOUNDED  = const(1)          # Encoder Value Range is -MAXINT..MAXINT
 ROTARY_RANGE_WRAP       = const(2)          # Encoder Value Range is ROTARY_MIN_VAL..ROTARY_MAX_VAL w/ Wraparound
 ROTARY_RANGE_BOUNDED    = const(3)          # Encoder Value Range is ROTARY_MIN_VAL..ROTARY_MAX_VAL w/o Wraparound
-
-# Light
-LIGHT_PIN               = const(25)         # Light Switch Pin Number
 
 # TFT Display Status Settings
 #  General

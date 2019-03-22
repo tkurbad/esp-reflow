@@ -13,16 +13,22 @@ class Menu:
     active = 0          # Currently Active Menu Item
     last_active = 0     # Last Active Menu Item
 
-    def __init__(self, menuitems, display, rotary, lock = None):
+    def __init__(self, menuitems, display, rotary, button_up, button_down,
+                 button_left, button_right, lock = None):
         """ Initialize Menu Area.
 
             Parameters:
-
-                menuitems           - A Tuple of Tuples
-                                      ('Menu Item Label', callback, (callback parameters))
+                menuitems           - List of
+TODO!!!
                 display             - A display.basic.Display Object
                 rotary              - A reflow.device.Rotary Object
+                button_X            - Tuples of 3 Elements:
+                                      (reflow.basedevice.PushButton
+                                       Object, Callback Function,
+                                       Callback Parameters [or None])
         """
+        if type(menuitems) != list:
+            raise RuntimeError('parameter menuitems must be of type list')
         self.menuitems = menuitems
         self.num_items = len(menuitems)
         self.display = display
@@ -30,7 +36,7 @@ class Menu:
         # Set Rotary Encoder to Bounded Mode, with Last Menu Item as Max
         # Value
         self.rotary._range_mode = config.ROTARY_RANGE_BOUNDED
-        self.rotary._max_val = self.num_items - 1
+        self.rotary._max_val = self.num_items - 1 if self.num_items > 0 else 0
         self.lock = lock
         self.font_height = config.MENU_FONT.height()
         self.clear()
@@ -77,10 +83,20 @@ class Menu:
                                         config.MENU_FONT.height(),
                                         color = config.MENU_INACTIVE_BG_COLOR)
         # Extract the Values from the Menuitem at 'index'
-        name, callback, params = self.menuitems[index]
+        (use_second,
+         title1,
+         callback1,
+         params1,
+         title2,
+         callback2,
+         params2)   = self.menuitems[index]
+        if callable(use_second):
+            title = title2 if use_second() else title1
+        else:
+            title = title2 if use_second else title1
         self.display.set_font(config.MENU_FONT)
         # Display the Menu Item
-        self.display.chars(name,
+        self.display.chars(title,
                            config.MENU_START_X + config.MENU_ITEM_OFFSET,
                            config.MENU_START_Y + config.MENU_ITEM_OFFSET + (index * config.MENU_ITEM_SPACING_Y))
 
@@ -101,6 +117,29 @@ class Menu:
             self.draw_item(index)
         gc.collect()
 
+    def callback_item(self, index):
+        """ Run the Callback Function of Menu Item at 'index'. """
+        (use_second,
+         title1,
+         callback1,
+         params1,
+         title2,
+         callback2,
+         params2)   = self.menuitems[index]
+        if callable(use_second):
+            callback = callback2 if use_second() else callback1
+            params = params2 if use_second() else params1
+        else:
+            callback = callback2 if use_second else callback1
+            params = params2 if use_second else params1
+        if callback is None:
+            return
+        if params is None:
+            callback()
+        else:
+            callback(params)
+        self.draw_item(index)
+
     def loop(self):
         """ Main Menu Loop. Checks for Rotary Encoder Updates and
             (De-)Activates Menu Items Accordingly.
@@ -111,6 +150,10 @@ class Menu:
         while True:
             # Read Rotary Encoder
             rotary_index, button_pressed = self.rotary.value()
+            if button_pressed:
+                self.callback_item(Menu.active)
+                sleep_ms(50)
+                continue
             if Menu.active != rotary_index:
                 # Rotary Encoder Has Been Turned
                 # Memorize Last Active Menu Item

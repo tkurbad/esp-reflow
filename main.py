@@ -13,6 +13,7 @@ import config
 
 from display.basic import Display
 from thermocouple.thermocouple import Thermocouple
+from reflow.device import ButtonDown, ButtonLeft, ButtonRight, ButtonUp
 from reflow.device import Buzzer, Fan, HeaterBottom, HeaterTop, Light
 from reflow.device import RotaryEncoder, SDCardHandler
 from reflow.menu import Menu
@@ -21,9 +22,6 @@ from wlan_sta import STA
 ##
 ## Setup
 ##
-
-# SD Card Present?
-sdcard_mounted = False
 
 # Initialize Display
 tft = Display()
@@ -71,16 +69,18 @@ fan = Fan()
 # Set Up Rotary Encoder
 rotary = RotaryEncoder()
 
-# Define Menu Items
-menuitems = (
-    ('hallo', None, None),
-    ('ballo', None, None),
-    ('popallo', None, None),
-    ('fan', None, None),
-)
+# Set Up the Push Buttons
+button_up = ButtonUp()
+button_left = ButtonLeft()
+button_right = ButtonRight()
+button_down = ButtonDown()
 
-# Set Up Menu
-menu = Menu(menuitems, tft, rotary, lock = reflowLock)
+# Let Device Settle
+sleep(1)
+
+# Initialize and Try to Mount SD Card
+sdcard = SDCardHandler()
+sdcard.mount()
 
 ##
 ## Basic Threads
@@ -99,7 +99,7 @@ def heatReadThread(lock):
 
 def statusDisplayThread(lock):
     """ Display Status, i.e. IP-Address and Temperatures on TFT. """
-    global ipaddress, sdcard_mounted
+    global ipaddress, sdcard
     with lock as l:
         tft.show_ipaddress(ipaddress)
 
@@ -112,20 +112,65 @@ def statusDisplayThread(lock):
                 tft.show_ipaddress(ipaddress)
             tft.show_fan(fan.duty())
             tft.show_light(light.pin.value())
-            tft.show_sdcard(sdcard_mounted)
+            tft.show_sdcard(sdcard.is_mounted())
         sleep(1)
+
+def buttonThread():
+    while True:
+        sleep_ms(50)
+        if button_up.value():
+            print('Up')
+            continue
+        if button_down.value():
+            print('Down')
+            continue
+        if button_left.value():
+            print('Left')
+            continue
+        if button_right.value():
+            print('Right')
+
 
 # Start Reading Heat Values (with Locking)
 _thread.start_new_thread(heatReadThread, (reflowLock, ))
 # Start Displaying Status (with Locking)
 _thread.start_new_thread(statusDisplayThread, (reflowLock, ))
 
+# Start Reading Button Presses (without Locking)
+_thread.start_new_thread(buttonThread, ())
+
 # Run Garbage Collector
 gc.collect()
 
-# Initialize and Try to Mount SD Card
-sdcard = SDCardHandler()
-sdcard_mounted = sdcard.mount()
+##
+## Main Menu
+##
+
+## Menu Item Switching Callback Functionss (Have to Return True / False)
+
+# Define Menu Items
+#  Format:
+#   OrderedDict with Menu Item Ids as Keys (Arbitrary Strings)
+#    and
+#   lists [trigger t, (label0, callback0, cb0 options if trigger == False), (label1, callback1, cb1 options if trigger == True)]
+#
+# Example Static Menu Item
+#  calibrate = [False, ('Calibrate', calibrate, (test = 1)), (None, None, None)]
+#
+# Example Dynamic Menu Item
+#  sdcard = [sd_card_mounted, ('Mount SD Card', mount_sd, None), ('Umount SD Card', umount_sd, None)]
+
+menuitems = [
+    [False, 'Hallo', None, None, None, None, None],
+    [False, 'Ballo', None, None, None, None, None],
+    [False, 'Popallo', None, None, None, None, None],
+    [False, 'Fan', None, None, None, None, None],
+    [sdcard.is_mounted, 'Mount SD Card', sdcard.mount, None, 'Unmount SD Card', sdcard.umount, None]
+]
+
+# Set Up Menu
+menu = Menu(menuitems, tft, rotary, lock = reflowLock)
+
 
 ##
 ## Main Code
@@ -148,20 +193,20 @@ buzzer.jingle()
 # - SD-Karten Filebrowser
 # - File-Headers ili9341 Modul
 
-with heater_bottom as hb, heater_top as ht, fan as fa, light as li:
-    li.on()
-    fa.duty(20)
-    hb.duty(10)
-    ht.duty(100)
-    sleep(10)
-    fa.duty(50)
-    hb.duty(50)
-    ht.duty(50)
-    sleep(10)
-    fa.duty(10)
-    hb.duty(100)
-    ht.duty(100)
-    sleep(10)
+# with heater_bottom as hb, heater_top as ht, fan as fa, light as li:
+    # li.on()
+    # fa.duty(20)
+    # hb.duty(10)
+    # ht.duty(100)
+    # sleep(10)
+    # fa.duty(50)
+    # hb.duty(50)
+    # ht.duty(50)
+    # sleep(10)
+    # fa.duty(10)
+    # hb.duty(100)
+    # ht.duty(100)
+    # sleep(10)
 
 try:
     """ Handle Menu Input. """

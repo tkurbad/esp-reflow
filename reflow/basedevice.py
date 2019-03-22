@@ -78,6 +78,35 @@ class PWMDevice:
         self.pwm.duty(float(duty))
 
 
+class PushButton:
+    """ Class for Simple Push Buttons. """
+
+    def __init__(self, pin):
+        """ Initialize Push Button. """
+        self._button_pressed = False
+        self._pin = Pin(pin, Pin.IN, Pin.PULL_UP)
+        self._pin.irq(trigger = Pin.IRQ_FALLING,
+                      handler = self._process_button)
+
+    def _process_button(self, pin):
+        """ Process Button Presses. """
+        # Debounce
+        if pin.value() == 0:
+            sleep_ms(5)
+            if pin.value() == 0:
+                self._button_pressed = True
+
+    def value(self):
+        """ Return Current Push Button State and Reset It. """
+        return self.reset_button()
+
+    def reset_button(self):
+        """ Return and Reset Push Button State. """
+        tempstate = self._button_pressed
+        self._button_pressed = False
+        return tempstate
+
+
 class Rotary:
     """ Rotary Encoder Class.
 
