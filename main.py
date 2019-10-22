@@ -6,14 +6,14 @@ import gc
 import _thread
 
 from machine import Pin, PWM, reset
-from os import mount, umount
-from time import sleep, sleep_ms
+from uos import mount, umount
+from utime import sleep, sleep_ms, ticks_diff, ticks_ms
 
 import config
 
 from display.basic import Display
 from thermocouple.thermocouple import Thermocouple
-from reflow.device import ButtonDown, ButtonLeft, ButtonRight, ButtonUp
+#from reflow.device import ButtonDown, ButtonLeft, ButtonRight, ButtonUp
 from reflow.device import Buzzer, Fan, HeaterBottom, HeaterTop, Light
 from reflow.device import RotaryEncoder, SDCardHandler
 from reflow.menu import Menu
@@ -42,11 +42,14 @@ thermocouples.add_tc(name = config.THERMOCOUPLE_NAME2,
 thermocouples.add_tc(name = config.THERMOCOUPLE_NAME3,
                      cs = config.THERMOCOUPLE_CS3)
 
+pcb_thermocouple = config.THERMOCOUPLE_NAME3
+
 # Set Up Variable to Display Duty Cycles
 heater_duty = {
     config.HEATER_NAME_TOP: 0.0,
     config.HEATER_NAME_BOTTOM: 0.0
 }
+
 # Allocate a lock
 reflowLock = _thread.allocate_lock()
 
@@ -70,17 +73,28 @@ fan = Fan()
 rotary = RotaryEncoder()
 
 # Set Up the Push Buttons
-button_up = ButtonUp()
-button_left = ButtonLeft()
-button_right = ButtonRight()
-button_down = ButtonDown()
+#button_up = ButtonUp()
+#button_left = ButtonLeft()
+#button_right = ButtonRight()
+#button_down = ButtonDown()
 
 # Let Device Settle
 sleep(1)
 
 # Initialize and Try to Mount SD Card
 sdcard = SDCardHandler()
+gc.collect()
 sdcard.mount()
+
+temperature_setpoint = (0.0, 0.0)
+soaking_started = 0
+
+def set_temperature(temp_setpoint):
+    global temperature_setpoint
+
+    if temp_setpoint[0] > 0:
+        light.pin.on()
+        temperature_setpoint = temp_setpoint
 
 ##
 ## Basic Threads
@@ -90,11 +104,42 @@ def heatReadThread(lock):
         500 ms.
     """
     global heater_duty
+    global temperature_setpoint
+    global soaking_started
+
     while True:
+        now = ticks_ms()
+        temperature_target, temperature_soaktime = temperature_setpoint
         heater_duty[config.HEATER_NAME_TOP] = heater_top.duty()
         heater_duty[config.HEATER_NAME_BOTTOM] = heater_bottom.duty()
         with lock as l:
             thermocouples.read_temps()
+        pcb_temp = thermocouples.temp[pcb_thermocouple][0]
+        if pcb_temp > 100:
+            fan.duty(20)
+        elif pcb_temp > 30:
+            fan.duty(10)
+        else:
+            fan.duty(0)
+
+        if temperature_target > 0:
+            if (soaking_started > 0
+                and ticks_diff(now, soaking_started) >= temperature_soaktime * 1000):
+                print (1)
+                heater_top.duty(0)
+                heater_bottom.duty(0)
+                temperature_setpoint = (0.0, 0.0)
+                soaking_started = 0
+            elif temperature_target > pcb_temp:
+                print (2)
+                heater_top.duty(100)
+                heater_bottom.duty(100 if not soaking_started else 50)
+            elif temperature_target <= pcb_temp:
+                print (3)
+                if not soaking_started:
+                    soaking_started = ticks_ms()
+                heater_top.duty(0)
+                heater_bottom.duty(0)
         sleep_ms(500)
 
 def statusDisplayThread(lock):
@@ -115,20 +160,20 @@ def statusDisplayThread(lock):
             tft.show_sdcard(sdcard.is_mounted())
         sleep(1)
 
-def buttonThread():
-    while True:
-        sleep_ms(50)
-        if button_up.value():
-            print('Up')
-            continue
-        if button_down.value():
-            print('Down')
-            continue
-        if button_left.value():
-            print('Left')
-            continue
-        if button_right.value():
-            print('Right')
+#def buttonThread():
+#    while True:
+#        sleep_ms(50)
+#        if button_up.value():
+#            print('Up')
+#            continue
+#        if button_down.value():
+#            print('Down')
+#            continue
+#        if button_left.value():
+#            print('Left')
+#            continue
+#        if button_right.value():
+#            print('Right')
 
 
 # Start Reading Heat Values (with Locking)
@@ -137,10 +182,11 @@ _thread.start_new_thread(heatReadThread, (reflowLock, ))
 _thread.start_new_thread(statusDisplayThread, (reflowLock, ))
 
 # Start Reading Button Presses (without Locking)
-_thread.start_new_thread(buttonThread, ())
+#_thread.start_new_thread(buttonThread, ())
 
 # Run Garbage Collector
 gc.collect()
+
 
 ##
 ## Main Menu
@@ -161,8 +207,8 @@ gc.collect()
 #  sdcard = [sd_card_mounted, ('Mount SD Card', mount_sd, None), ('Umount SD Card', umount_sd, None)]
 
 menuitems = [
-    [False, 'Hallo', None, None, None, None, None],
     [False, 'Ballo', None, None, None, None, None],
+    [False, 'Heat Up', set_temperature, (100, 10), None, None, None],
     [False, 'Popallo', None, None, None, None, None],
     [False, 'Fan', None, None, None, None, None],
     [sdcard.is_mounted, 'Mount SD Card', sdcard.mount, None, 'Unmount SD Card', sdcard.umount, None]
@@ -180,7 +226,7 @@ menu = Menu(menuitems, tft, rotary, lock = reflowLock)
 menu.draw_items()
 
 # Play Jingle
-buzzer.jingle()
+#buzzer.jingle()
 
 ###
 # IDEE:
@@ -192,21 +238,6 @@ buzzer.jingle()
 # TODO:
 # - SD-Karten Filebrowser
 # - File-Headers ili9341 Modul
-
-# with heater_bottom as hb, heater_top as ht, fan as fa, light as li:
-    # li.on()
-    # fa.duty(20)
-    # hb.duty(10)
-    # ht.duty(100)
-    # sleep(10)
-    # fa.duty(50)
-    # hb.duty(50)
-    # ht.duty(50)
-    # sleep(10)
-    # fa.duty(10)
-    # hb.duty(100)
-    # ht.duty(100)
-    # sleep(10)
 
 try:
     """ Handle Menu Input. """
@@ -220,4 +251,4 @@ finally:
     heater_top.deinit()
     fan.deinit()
     buzzer.deinit()
-    sdcard.deinit()
+    #sdcard.deinit()

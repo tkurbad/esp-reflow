@@ -3,9 +3,26 @@
 # MIT license; Copyright (c) 2019 Torsten Kurbad
 
 import gc
-from time import sleep_ms
+from utime import sleep_ms
 
 import config
+
+# Cache config variables for performance
+ROTARY_RANGE_BOUNDED        = config.ROTARY_RANGE_BOUNDED
+
+MENU_WIDTH                  = config.MENU_WIDTH
+MENU_HEIGHT                 = config.MENU_HEIGHT
+MENU_START_X                = config.MENU_START_X
+MENU_START_Y                = config.MENU_START_Y
+MENU_ITEM_OFFSET            = config.MENU_ITEM_OFFSET
+MENU_ITEM_SPACING_Y         = config.MENU_ITEM_SPACING_Y
+MENU_FONT                   = config.MENU_FONT
+MENU_BG_COLOR               = config.MENU_BG_COLOR
+MENU_ACTIVE_ITEM_COLOR      = config.MENU_ACTIVE_ITEM_COLOR
+MENU_ACTIVE_BG_COLOR        = config.MENU_ACTIVE_BG_COLOR
+MENU_INACTIVE_ITEM_COLOR    = config.MENU_INACTIVE_ITEM_COLOR
+MENU_INACTIVE_BG_COLOR      = config.MENU_INACTIVE_BG_COLOR
+
 
 class Menu:
     """ Main Menu Display and Handling Class. """
@@ -13,8 +30,9 @@ class Menu:
     active = 0          # Currently Active Menu Item
     last_active = 0     # Last Active Menu Item
 
-    def __init__(self, menuitems, display, rotary, button_up, button_down,
-                 button_left, button_right, lock = None):
+    def __init__(self, menuitems, display, rotary, button_up = None,
+                 button_down = None, button_left = None,
+                 button_right = None, lock = None):
         """ Initialize Menu Area.
 
             Parameters:
@@ -35,20 +53,20 @@ TODO!!!
         self.rotary = rotary
         # Set Rotary Encoder to Bounded Mode, with Last Menu Item as Max
         # Value
-        self.rotary._range_mode = config.ROTARY_RANGE_BOUNDED
+        self.rotary._range_mode = ROTARY_RANGE_BOUNDED
         self.rotary._max_val = self.num_items - 1 if self.num_items > 0 else 0
         self.lock = lock
-        self.font_height = config.MENU_FONT.height()
+        self.font_height = MENU_FONT.height()
         self.clear()
         gc.collect()
 
     def _clear(self):
         """ Clear Menu Area Using Menu Background Color. """
-        self.display.fill_rectangle(config.MENU_START_X,
-                                    config.MENU_START_Y,
-                                    config.MENU_WIDTH,
-                                    config.MENU_HEIGHT,
-                                    color = config.MENU_BG_COLOR)
+        self.display.fill_rectangle(MENU_START_X,
+                                    MENU_START_Y,
+                                    MENU_WIDTH,
+                                    MENU_HEIGHT,
+                                    MENU_BG_COLOR)
 
     def clear(self):
         """ Clear Menu Area. Use Locking if Lock Has Been Provided. """
@@ -60,28 +78,29 @@ TODO!!!
             self._clear()
         self.rotary.reset()
 
+    @micropython.native
     def _draw_item(self, index):
         """ Draw a Single Menu Item with Number 'index'. """
         if index == Menu.active:
             # Menu Item Is Currently Active - Set Colors Accordingly and
             # Draw Active Item Background
-            self.display.set_color(config.MENU_ACTIVE_ITEM_COLOR,
-                                   config.MENU_ACTIVE_BG_COLOR)
-            self.display.fill_rectangle(config.MENU_START_X,
-                                        config.MENU_START_Y + config.MENU_ITEM_OFFSET + (index * config.MENU_ITEM_SPACING_Y),
-                                        config.MENU_WIDTH,
-                                        config.MENU_FONT.height(),
-                                        color = config.MENU_ACTIVE_BG_COLOR)
+            self.display.set_color(MENU_ACTIVE_ITEM_COLOR,
+                                   MENU_ACTIVE_BG_COLOR)
+            self.display.fill_rectangle(MENU_START_X,
+                                        MENU_START_Y + MENU_ITEM_OFFSET + (index * MENU_ITEM_SPACING_Y),
+                                        MENU_WIDTH,
+                                        MENU_FONT.height(),
+                                        color = MENU_ACTIVE_BG_COLOR)
         else:
             # Menu Item is Inactive - Set Colors Accordingly and Clear
             # Item Background
-            self.display.set_color(config.MENU_INACTIVE_ITEM_COLOR,
-                                   config.MENU_INACTIVE_BG_COLOR)
-            self.display.fill_rectangle(config.MENU_START_X,
-                                        config.MENU_START_Y + config.MENU_ITEM_OFFSET + (index * config.MENU_ITEM_SPACING_Y),
-                                        config.MENU_WIDTH,
-                                        config.MENU_FONT.height(),
-                                        color = config.MENU_INACTIVE_BG_COLOR)
+            self.display.set_color(MENU_INACTIVE_ITEM_COLOR,
+                                   MENU_INACTIVE_BG_COLOR)
+            self.display.fill_rectangle(MENU_START_X,
+                                        MENU_START_Y + MENU_ITEM_OFFSET + (index * MENU_ITEM_SPACING_Y),
+                                        MENU_WIDTH,
+                                        MENU_FONT.height(),
+                                        color = MENU_INACTIVE_BG_COLOR)
         # Extract the Values from the Menuitem at 'index'
         (use_second,
          title1,
@@ -97,8 +116,8 @@ TODO!!!
         self.display.set_font(config.MENU_FONT)
         # Display the Menu Item
         self.display.chars(title,
-                           config.MENU_START_X + config.MENU_ITEM_OFFSET,
-                           config.MENU_START_Y + config.MENU_ITEM_OFFSET + (index * config.MENU_ITEM_SPACING_Y))
+                           MENU_START_X + MENU_ITEM_OFFSET,
+                           MENU_START_Y + MENU_ITEM_OFFSET + (index * MENU_ITEM_SPACING_Y))
 
     def draw_item(self, index):
         """ Draw a Single Menu Item at 'index'. Use Locking if Lock Has

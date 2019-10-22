@@ -167,6 +167,7 @@ class Rotary:
         self._pin_push.irq(trigger = Pin.IRQ_RISING | Pin.IRQ_FALLING,
                            handler = self._process_push_button)
 
+    @micropython.native
     def _wrap(self, value, incr):
         """ Wrap Around. """
         val_range = self._max_val - self._min_val + 1
@@ -177,6 +178,7 @@ class Rotary:
 
         return self._min_val + (value - self._min_val) % val_range
 
+    @micropython.native
     def _bound(self, value, incr):
         """ Enforce Boundaries. """
         return min(self._max_val, max(self._min_val, value + incr))
@@ -204,6 +206,7 @@ class Rotary:
         self._pin_dt.irq(handler = None)
         self._pin_push.irq(handler = None)
 
+    @micropython.native
     def _process_rotary_pins(self, pin):
         """ Process the Rotary Input and Calculate Encoder Value. """
         clk_dt_pins = (self._pin_clk.value() << 1) | self._pin_dt.value()
@@ -241,6 +244,7 @@ class SwitchedDevice:
         This is for Output Pins that Are Switched On if in Logical High
         State.
     """
+
     def __init__(self, pin):
         """ Initialize Pin Object as Output, Activate Internal Pulldown
             Resistor.

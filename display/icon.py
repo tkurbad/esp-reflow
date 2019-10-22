@@ -2,6 +2,7 @@
 #
 # MIT license; Copyright (c) 2019 Torsten Kurbad
 
+@micropython.native
 def string_to_icon(ascii_image):
     """ Helper Method to Transform 'ASCII Images' to Bytes. """
     binlists = []
