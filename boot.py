@@ -4,14 +4,14 @@
 
 import esp
 import _thread
-#import webrepl
+import webrepl
 
 from time import sleep
 from wlan_sta import STA
 
 esp.osdebug(None)
 
-#webrepl.start()
+webrepl.start()
 
 ssids = [
     ('IWM', 'Be wary then; best safety lies in fear'),
