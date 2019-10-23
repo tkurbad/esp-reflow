@@ -82,7 +82,7 @@ HEATER_LABEL            = {
 }
 HEATER_BOTTOM_PIN       = const(27)         # Bottom Heater Pin Number
 HEATER_TOP_PIN          = const(26)         # Top Heater Pin Number
-HEATER_PWM_FREQ         = const(5)          # PWM Frequency for All Heaters
+HEATER_PWM_FREQ         = const(10)         # PWM Frequency for All Heaters
 HEATER_PWM_TIMER        = const(2)          # PWM Timer Number for All Heaters
 NUM_HEATERS             = const(2)          # Number of Physically Connected Heaters
 
