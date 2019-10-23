@@ -96,7 +96,7 @@ class HeaterBottom(Heater):
     def __init__(self):
         """ Initialize Bottom Heater Using Pre-Configured Pin Number.
         """
-        super().__init__(config.HEATER_TOP_PIN)
+        super().__init__(config.HEATER_BOTTOM_PIN)
 
 
 class HeaterTop(Heater):
