@@ -6,6 +6,7 @@ import gc
 import _thread
 
 from machine import Pin, PWM, reset
+from ucollections import deque
 from uos import mount, umount
 from utime import sleep, sleep_ms, ticks_diff, ticks_ms
 
@@ -83,33 +84,85 @@ sleep(1)
 
 # Initialize and Try to Mount SD Card
 sdcard = SDCardHandler()
-gc.collect()
-sdcard.mount()
+try:
+    sdcard.mount()
+except MemoryError:
+    gc.collect()
 
-temperature_setpoint = (0.0, 0.0)
+# Variables Controlling the Actual Reflow Process
+do_reflow = False
+reflow_profile_table = deque((), 5, 1)
 soaking_started = 0
 
-def set_temperature(temp_setpoint):
-    global temperature_setpoint
-
-    if temp_setpoint[0] > 0:
-        light.pin.on()
-        temperature_setpoint = temp_setpoint
 
 ##
 ## Basic Threads
 ##
-def heatReadThread(lock):
+
+# This is the Central Thread that Does All the Thermocouple Readings and
+# Heater Control
+def heatReadResponseThread(lock):
     """ Read Heater PWM Duty Settings and Thermocouple Values Every
         500 ms.
+        If Heating is Requested by the global 'do_reflow', Do a
+        "Bang Bang" Control of the Upper and Lower Heaters to Follow
+        the Currently Loaded Reflow Profile.
+
+        The Following Rule Applies for Each Temperature Setpoint in the
+        Profile:
+
+        1) If New Setpoint > Current Setpoint: Heat Up as Fast as
+                                               Possible
+        2) If Setpoint is Reached and Soak
+                             Time is not Over: Keep Temperature by
+                                               "Banging" the Heaters Off
+                                               and On again with Reduced
+                                               Power
+        3) If New Setpoint == 0 or No New SP:  Turn Heaters Off, Reset
+                                               do_reflow = False, and
+                                               set 'open_door' Alarm
+                                               Flag to True
+        4) If New Setpoint > 0, but < Current
+                                     Setpoint: Turn Off Heaters, Wait
+                                               for Temperature to Reach
+                                               New Setpoint, Start
+                                               Soaking as in 2)
     """
-    global heater_duty
-    global temperature_setpoint
-    global soaking_started
+
+    global heater_duty          # Heater duty values as read by the
+                                # respective thread
+    global do_reflow            # Do the actual reflow
+    global reflow_profile_table # Simplified reflow profile as deque of
+                                #  Tuples (temp_setpoint, temp_soaktime)
+
+    soaking_started = 0.0
+    last_setpoint = 0.0
+    last_soaktime = 0.0
+    temp_setpoint = 0.0
+    temp_soaktime = 0.0
+    heating_top = False
+    heating_bottom = False
+
+    def _shutoff():
+        global do_reflow
+        nonlocal soaking_started
+        nonlocal temp_setpoint
+        nonlocal temp_soaktime
+
+        heater_top.duty(0)
+        heater_bottom.duty(0)
+        do_reflow = False
+        soaking_started = 0.0
+        last_setpoint = 0.0
+        last_soaktime = 0.0
+        temp_setpoint = 0.0
+        temp_soaktime = 0.0
+        heating_top = False
+        heating_bottom = False
+        buzzer.jingle()
 
     while True:
         now = ticks_ms()
-        temperature_target, temperature_soaktime = temperature_setpoint
         heater_duty[config.HEATER_NAME_TOP] = heater_top.duty()
         heater_duty[config.HEATER_NAME_BOTTOM] = heater_bottom.duty()
         with lock as l:
@@ -122,24 +175,58 @@ def heatReadThread(lock):
         else:
             fan.duty(0)
 
-        if temperature_target > 0:
-            if (soaking_started > 0
-                and ticks_diff(now, soaking_started) >= temperature_soaktime * 1000):
-                print (1)
-                heater_top.duty(0)
-                heater_bottom.duty(0)
-                temperature_setpoint = (0.0, 0.0)
-                soaking_started = 0
-            elif temperature_target > pcb_temp:
-                print (2)
-                heater_top.duty(100)
-                heater_bottom.duty(100 if not soaking_started else 50)
-            elif temperature_target <= pcb_temp:
-                print (3)
-                if not soaking_started:
-                    soaking_started = ticks_ms()
-                heater_top.duty(0)
-                heater_bottom.duty(0)
+        if do_reflow:
+            try:
+                if temp_setpoint == 0:
+                    if last_setpoint > 0.0:
+                        # Setpoint of 0 at end of reflow cycle -> Shut off
+                        _shutoff()
+                    else:
+                        last_setpoint = temp_setpoint
+                        last_soaktime = temp_soaktime
+                        # Try to read first target values from profile
+                        (temp_setpoint, temp_soaktime) = reflow_profile_table.popleft()
+                        print ('Temperature setpoint:', temp_setpoint, 'Soak time:', temp_soaktime)
+                        # May produce an IndexError if no more values are in
+                        # the reflow table, which we'll handle in the
+                        # 'except' branch
+                if temp_setpoint != last_setpoint:
+                    if (soaking_started > 0.0
+                        and ticks_diff(now, soaking_started) >= temp_soaktime * 1000):
+                            soaking_started = 0.0
+                            last_setpoint = temp_setpoint
+                            last_soaktime = temp_soaktime
+                            # Try to read next set of target values from profile
+                            temp_setpoint, temp_soaktime = reflow_profile_table.popleft()
+                            # Possible IndexError will be handled later
+                if temp_setpoint > pcb_temp:
+                    # Wait one cycle before turning on bottom heater
+                    # to avoid a surge
+                    if heating_top and not heating_bottom:
+                        # Bottom heater output will be reduced while
+                        # soaking and after the first soaking phase
+                        heater_bottom.duty(100 if (soaking_started == 0 or last_soaktime == 0) else 50)
+                        heating_bottom = True
+                    if not heating_top:
+                        heater_top.duty(100)
+                        heating_top = True
+                if heating_top and (temp_setpoint <= pcb_temp):
+                    if not soaking_started:
+                        soaking_started = ticks_ms()
+                    heater_top.duty(0)
+                    heater_bottom.duty(0)
+                    heating_top = False
+                    heating_bottom = False
+            except:
+                # Either there are no more values in the reflow profile
+                # or something bad happened. In any case:
+                # SHUT OFF the heaters!
+                _shutoff()
+        else:
+            # In case of a requested shutoff, i.e. by menu command
+            if heating_top or heating_bottom or soaking_started:
+                _shutoff()
+
         sleep_ms(500)
 
 def statusDisplayThread(lock):
@@ -160,24 +247,24 @@ def statusDisplayThread(lock):
             tft.show_sdcard(sdcard.is_mounted())
         sleep(1)
 
-#def buttonThread():
-#    while True:
-#        sleep_ms(50)
-#        if button_up.value():
-#            print('Up')
-#            continue
-#        if button_down.value():
-#            print('Down')
-#            continue
-#        if button_left.value():
-#            print('Left')
-#            continue
-#        if button_right.value():
-#            print('Right')
+def buttonThread():
+    while True:
+        sleep_ms(50)
+        if button_up.value():
+            print('Up')
+            continue
+        if button_down.value():
+            print('Down')
+            continue
+        if button_left.value():
+            print('Left')
+            continue
+        if button_right.value():
+            print('Right')
 
 
 # Start Reading Heat Values (with Locking)
-_thread.start_new_thread(heatReadThread, (reflowLock, ))
+_thread.start_new_thread(heatReadResponseThread, (reflowLock, ))
 # Start Displaying Status (with Locking)
 _thread.start_new_thread(statusDisplayThread, (reflowLock, ))
 
@@ -187,6 +274,21 @@ _thread.start_new_thread(statusDisplayThread, (reflowLock, ))
 # Run Garbage Collector
 gc.collect()
 
+##
+## Main Reflow Function
+##
+def run_reflow(shutoff = False, with_light = True):
+    global do_reflow
+    global reflow_profile_table
+
+    if with_light:
+        light.pin.on()
+
+    do_reflow = False
+    if not shutoff:
+        reflow_profile_table.append((160, 80))
+        reflow_profile_table.append((220, 55))
+        do_reflow = True
 
 ##
 ## Main Menu
@@ -207,10 +309,8 @@ gc.collect()
 #  sdcard = [sd_card_mounted, ('Mount SD Card', mount_sd, None), ('Umount SD Card', umount_sd, None)]
 
 menuitems = [
-    [False, 'Ballo', None, None, None, None, None],
-    [False, 'Heat Up', set_temperature, (100, 10), None, None, None],
-    [False, 'Popallo', None, None, None, None, None],
-    [False, 'Fan', None, None, None, None, None],
+    [do_reflow, 'Do a Reflow', run_reflow, None, 'Stop Reflowing', run_reflow, True],
+    [light.pin.value, 'Turn on Light', light.pin.on, None, 'Turn off Light', light.pin.off, None],
     [sdcard.is_mounted, 'Mount SD Card', sdcard.mount, None, 'Unmount SD Card', sdcard.umount, None]
 ]
 
@@ -251,4 +351,4 @@ finally:
     heater_top.deinit()
     fan.deinit()
     buzzer.deinit()
-    #sdcard.deinit()
+    sdcard.deinit()
