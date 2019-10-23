@@ -8,16 +8,12 @@ from utime import sleep_ms
 import config
 
 # Cache config variables for performance
-ROTARY_RANGE_BOUNDED        = config.ROTARY_RANGE_BOUNDED
-
 MENU_WIDTH                  = config.MENU_WIDTH
-MENU_HEIGHT                 = config.MENU_HEIGHT
 MENU_START_X                = config.MENU_START_X
 MENU_START_Y                = config.MENU_START_Y
 MENU_ITEM_OFFSET            = config.MENU_ITEM_OFFSET
 MENU_ITEM_SPACING_Y         = config.MENU_ITEM_SPACING_Y
 MENU_FONT                   = config.MENU_FONT
-MENU_BG_COLOR               = config.MENU_BG_COLOR
 MENU_ACTIVE_ITEM_COLOR      = config.MENU_ACTIVE_ITEM_COLOR
 MENU_ACTIVE_BG_COLOR        = config.MENU_ACTIVE_BG_COLOR
 MENU_INACTIVE_ITEM_COLOR    = config.MENU_INACTIVE_ITEM_COLOR
@@ -53,7 +49,7 @@ TODO!!!
         self.rotary = rotary
         # Set Rotary Encoder to Bounded Mode, with Last Menu Item as Max
         # Value
-        self.rotary._range_mode = ROTARY_RANGE_BOUNDED
+        self.rotary._range_mode = config.ROTARY_RANGE_BOUNDED
         self.rotary._max_val = self.num_items - 1 if self.num_items > 0 else 0
         self.lock = lock
         self.font_height = MENU_FONT.height()
@@ -65,8 +61,8 @@ TODO!!!
         self.display.fill_rectangle(MENU_START_X,
                                     MENU_START_Y,
                                     MENU_WIDTH,
-                                    MENU_HEIGHT,
-                                    MENU_BG_COLOR)
+                                    config.MENU_HEIGHT,
+                                    config.MENU_BG_COLOR)
 
     def clear(self):
         """ Clear Menu Area. Use Locking if Lock Has Been Provided. """
