@@ -14,11 +14,23 @@ import config
 
 from display.basic import Display
 from thermocouple.thermocouple import Thermocouple
-#from reflow.device import ButtonDown, ButtonLeft, ButtonRight, ButtonUp
+from reflow.device import ButtonDown, ButtonLeft, ButtonRight, ButtonUp
 from reflow.device import Buzzer, Fan, HeaterBottom, HeaterTop, Light
 from reflow.device import RotaryEncoder, SDCardHandler
 from reflow.menu import Menu
 from wlan_sta import STA
+
+##
+## Cache Some Configuration Variables
+##
+FAN_LOW_DUTY            = config.FAN_LOW_DUTY
+FAN_HIGH_DUTY           = config.FAN_HIGH_DUTY
+FAN_LOW_DUTY_TEMP       = config.FAN_LOW_DUTY_TEMP
+FAN_HIGH_DUTY_TEMP      = config.FAN_HIGH_DUTY_TEMP
+HEATER_BOTTOM_MAX_DUTY  = config.HEATER_BOTTOM_MAX_DUTY
+HEATER_TOP_MAX_DUTY     = config.HEATER_TOP_MAX_DUTY
+HEATER_NAME_BOTTOM      = config.HEATER_NAME_BOTTOM
+HEATER_NAME_TOP         = config.HEATER_NAME_TOP
 
 ##
 ## Setup
@@ -74,10 +86,10 @@ fan = Fan()
 rotary = RotaryEncoder()
 
 # Set Up the Push Buttons
-#button_up = ButtonUp()
-#button_left = ButtonLeft()
-#button_right = ButtonRight()
-#button_down = ButtonDown()
+button_up = ButtonUp()
+button_left = ButtonLeft()
+button_right = ButtonRight()
+button_down = ButtonDown()
 
 # Let Device Settle
 sleep(1)
@@ -92,7 +104,7 @@ except MemoryError:
 # Variables Controlling the Actual Reflow Process
 do_reflow = False
 reflow_profile_table = deque((), 5, 1)
-soaking_started = 0
+soaking_started = 0.0
 
 
 ##
@@ -134,42 +146,38 @@ def heatReadResponseThread(lock):
     global do_reflow            # Do the actual reflow
     global reflow_profile_table # Simplified reflow profile as deque of
                                 #  Tuples (temp_setpoint, temp_soaktime)
+    global soaking_started
 
-    soaking_started = 0.0
     last_setpoint = 0.0
-    last_soaktime = 0.0
     temp_setpoint = 0.0
     temp_soaktime = 0.0
+    overshoot_prevention = 0
+    current_overshoot_step = None
     heating_top = False
     heating_bottom = False
-    heating_bottom_reduced = False
-    initial_rampup = True       # Designates the first heatup stage so
-                                # ramp up can be decidedly faster
 
     def _shutoff(soft = False):
         global do_reflow
-        nonlocal soaking_started
+        global soaking_started
         nonlocal last_setpoint
-        nonlocal last_soaktime
         nonlocal temp_setpoint
         nonlocal temp_soaktime
+        nonlocal overshoot_prevention
+        nonlocal current_overshoot_step
         nonlocal heating_top
         nonlocal heating_bottom
-        nonlocal heating_bottom_reduced
-        nonlocal initial_rampup
 
         heater_top.duty(0)
         heater_bottom.duty(0)
         do_reflow = False
         soaking_started = 0.0
         last_setpoint = 0.0
-        last_soaktime = 0.0
         temp_setpoint = 0.0
         temp_soaktime = 0.0
+        overshoot_prevention = 0
+        current_overshoot_step = None
         heating_top = False
         heating_bottom = False
-        heating_bottom_reduced = False
-        initial_rampup = True
         buzzer.jingle()
         if soft:
             print ('Reflow process finished. Please, open oven door!')
@@ -178,68 +186,91 @@ def heatReadResponseThread(lock):
 
     while True:
         now = ticks_ms()
-        heater_duty[config.HEATER_NAME_TOP] = heater_top.duty()
-        heater_duty[config.HEATER_NAME_BOTTOM] = heater_bottom.duty()
+        heater_duty[HEATER_NAME_TOP] = heater_top.duty()
+        heater_duty[HEATER_NAME_BOTTOM] = heater_bottom.duty()
         with lock as l:
             thermocouples.read_temps()
         pcb_temp = thermocouples.temp[pcb_thermocouple][0]
-        if pcb_temp > 100:
-            fan.duty(20)
-        elif pcb_temp > 30:
-            fan.duty(10)
+        if pcb_temp > FAN_HIGH_DUTY_TEMP:
+            fan.duty(FAN_HIGH_DUTY)
+        elif pcb_temp > FAN_LOW_DUTY_TEMP:
+            fan.duty(FAN_LOW_DUTY)
         else:
             fan.duty(0)
 
         if do_reflow:
             try:
                 if temp_setpoint == 0:
-                    if last_setpoint > 0.0:
+                    if last_setpoint > 0:
                         # Setpoint of 0 at end of reflow cycle -> Shut off
                         _shutoff(soft = True)
                     else:
                         last_setpoint = temp_setpoint
-                        last_soaktime = temp_soaktime
                         # Try to read first target values from profile
-                        (temp_setpoint, temp_soaktime) = reflow_profile_table.popleft()
-                        print ('Reflow process started...'
+                        (temp_setpoint,
+                         temp_soaktime,
+                         overshoot_prevention) = reflow_profile_table.popleft()
+                        print ('Reflow process started...')
                         print ('Temperature setpoint:', temp_setpoint, 'Soak time:', temp_soaktime)
                         # May produce an IndexError if no more values are in
                         # the reflow table, which we'll handle in the
                         # 'except' branch
+
+                        # Calculate Overshoot Prevention
+                        overshoot_index = 0
+                        overshoot_steps = [
+                            (temp_setpoint - 10 * (overshoot_prevention - i + 1),
+                             max(HEATER_TOP_MAX_DUTY - 20 * i, 0),
+                             max(HEATER_BOTTOM_MAX_DUTY - 10 * i, 0))
+                             for i in range(1, overshoot_prevention + 1)]
+                        try:
+                            current_overshoot_step = overshoot_steps[overshoot_index]
+                        except IndexError:
+                            current_overshoot_step = None
                 if temp_setpoint != last_setpoint:
                     if (soaking_started > 0.0
                         and ticks_diff(now, soaking_started) >= temp_soaktime * 1000):
                             print ('Soaking ended...')
                             soaking_started = 0.0
                             last_setpoint = temp_setpoint
-                            last_soaktime = temp_soaktime
                             # Try to read next set of target values from profile
-                            temp_setpoint, temp_soaktime = reflow_profile_table.popleft()
+                            (temp_setpoint,
+                             temp_soaktime,
+                             overshoot_prevention) = reflow_profile_table.popleft()
                             print ('Temperature setpoint:', temp_setpoint, 'Soak time:', temp_soaktime)
-                            initial_rampup = False
                             # Possible IndexError will be handled later
+
+                            # Calculate Overshoot Prevention
+                            overshoot_index = 0
+                            overshoot_steps = [
+                                (temp_setpoint - 10 * (overshoot_prevention - i + 1),
+                                 max(HEATER_TOP_MAX_DUTY - 20 * i, 0),
+                                 max(HEATER_BOTTOM_MAX_DUTY - 10 * i, 0))
+                                 for i in range(1, overshoot_prevention + 1)]
+
+                            if overshoot_index < len(overshoot_steps)
+                                current_overshoot_step = overshoot_steps[overshoot_index]
+
                 if temp_setpoint > pcb_temp:
                     # Wait one cycle before turning on bottom heater
                     # to avoid a surge
                     if heating_top and not heating_bottom:
-                        # Bottom heater output will be reduced while
-                        # soaking and after the initial rampup phase
-                        bottom_duty = 100 if initial_rampup and not soaking_started else 50
-                        heater_bottom.duty(bottom_duty)
+                        heater_bottom.duty(HEATER_BOTTOM_MAX_DUTY)
                         heating_bottom = True
-                        if bottom_duty < 100:
-                            heating_bottom_reduced = True
-                    if (heating_top and heating_bottom
-                        and not heating_bottom_reduced
-                        and temp_setpoint - 20 > pcbtemp):
-                        # Bottom heater output will be reduced shortly
-                        # before temperature setpoint is reached on initial
-                        # rampup to reduce overshoot
-                        heater_bottom.duty(50)
-                        heating_bottom_reduced = True
                     if not heating_top:
-                        heater_top.duty(100)
+                        heater_top.duty(HEATER_TOP_MAXY_DUTY)
                         heating_top = True
+
+                    # Overshoot prevention
+                    if (current_overshoot_step is not None and 
+                        pcb_temp > current_overshoot_step[0]):
+                        heater_top.duty(current_overshoot_step[1])
+                        heater_bottom.duty(current_overshoot_step[2])
+                        overshoot_index += 1
+
+                        if overshoot_index < len(overshoot_steps)
+                            current_overshoot_step = overshoot_steps[overshoot_index]
+
                 if heating_top and (temp_setpoint <= pcb_temp):
                     if not soaking_started:
                         soaking_started = ticks_ms()
@@ -248,14 +279,17 @@ def heatReadResponseThread(lock):
                     heater_bottom.duty(0)
                     heating_top = False
                     heating_bottom = False
+
             except IndexError:
                 # There are no more values in the reflow profile
                 # SHUT OFF the heaters!
                 _shutoff(soft = True)
+
             except:
                 # Something BAD happened.
                 # SHUT OFF the heaters!
                 _shutoff()
+                raise
 
         else:
             # In case of a requested shutoff, i.e. by menu command
@@ -283,19 +317,22 @@ def statusDisplayThread(lock):
         sleep(1)
 
 def buttonThread():
+    # For now, just duplicate/emulate the rotary encoder
     while True:
         sleep_ms(50)
         if button_up.value():
-            print('Up')
+            if rotary._value > rotary._min_val:
+                rotary._value -= 1
             continue
         if button_down.value():
-            print('Down')
+            if rotary._value < rotary._max_val:
+                rotary._value += 1
             continue
         if button_left.value():
             print('Left')
             continue
         if button_right.value():
-            print('Right')
+            rotary._button_pressed = True
 
 
 # Start Reading Heat Values (with Locking)
@@ -304,7 +341,7 @@ _thread.start_new_thread(heatReadResponseThread, (reflowLock, ))
 _thread.start_new_thread(statusDisplayThread, (reflowLock, ))
 
 # Start Reading Button Presses (without Locking)
-#_thread.start_new_thread(buttonThread, ())
+_thread.start_new_thread(buttonThread, ())
 
 # Run Garbage Collector
 gc.collect()
@@ -312,18 +349,37 @@ gc.collect()
 ##
 ## Main Reflow Function
 ##
-def run_reflow(shutoff = False, with_light = True):
+def run_reflow(with_light = True):
     global do_reflow
     global reflow_profile_table
 
     if with_light:
         light.pin.on()
 
+    # Reflow profile: (Temperature Setpoint, Soak Time, Overshoot Prevention Steps)
+    reflow_profile_table.append((160, 80, 3))
+    reflow_profile_table.append((220, 55, 2))
+    do_reflow = True
+
+def cancel_reflow():
+    global do_reflow
+    global reflow_profile_table
+    global soaking_started
+
+    # Reinitialize the critical values to trigger auto shutdown
+    reflow_profile_table = deque((), 5, 1)
+    soaking_started = 0.0
+
+    sleep(1)
+    # Make sure everything is shut off
     do_reflow = False
-    if not shutoff:
-        reflow_profile_table.append((160, 80))
-        reflow_profile_table.append((220, 55))
-        do_reflow = True
+    heater_top.duty(0)
+    heater_bottom.duty(0)
+
+def reflowing():
+    global do_reflow
+
+    return do_reflow
 
 ##
 ## Main Menu
@@ -344,7 +400,7 @@ def run_reflow(shutoff = False, with_light = True):
 #  sdcard = [sd_card_mounted, ('Mount SD Card', mount_sd, None), ('Umount SD Card', umount_sd, None)]
 
 menuitems = [
-    [do_reflow, 'Do a Reflow', run_reflow, None, 'Stop Reflowing', run_reflow, True],
+    [reflowing, 'Start Reflow', run_reflow, None, 'Stop Reflow', cancel_reflow, None],
     [light.pin.value, 'Turn on Light', light.pin.on, None, 'Turn off Light', light.pin.off, None],
     [sdcard.is_mounted, 'Mount SD Card', sdcard.mount, None, 'Unmount SD Card', sdcard.umount, None]
 ]
@@ -363,6 +419,8 @@ menu.draw_items()
 # Play Jingle
 #buzzer.jingle()
 
+# Print Initial Amount of Free Memory
+print ('Free Memory:', gc.mem_free())
 ###
 # IDEE:
 # Callback-Funktionen / IRQ-Handler fuer Rotary konfigurierbar machen
