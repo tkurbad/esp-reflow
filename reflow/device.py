@@ -80,13 +80,13 @@ class Fan(PWMDevice):
 class Heater(PWMDevice):
     """ Handle a Heater. """
 
-    def __init__(self, pin):
+    def __init__(self, pin, timer):
         """ Initialize Heater on Given 'pin' Number Using Pre-Configured
             Values.
         """
         super().__init__(pin,
                          freq = config.HEATER_PWM_FREQ,
-                         timer = config.HEATER_PWM_TIMER,
+                         timer = timer,
                          duty = 0)
 
 
@@ -96,7 +96,8 @@ class HeaterBottom(Heater):
     def __init__(self):
         """ Initialize Bottom Heater Using Pre-Configured Pin Number.
         """
-        super().__init__(config.HEATER_BOTTOM_PIN)
+        super().__init__(config.HEATER_BOTTOM_PIN,
+                         config.HEATER_BOTTOM_PWM_TIMER)
 
 
 class HeaterTop(Heater):
@@ -104,7 +105,8 @@ class HeaterTop(Heater):
 
     def __init__(self):
         """ Initialize Top Heater Using Pre-Configured Pin Number. """
-        super().__init__(config.HEATER_TOP_PIN)
+        super().__init__(config.HEATER_TOP_PIN,
+                         config.HEATER_TOP_PWM_TIMER)
 
 
 class Light(SwitchedDevice):
