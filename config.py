@@ -60,7 +60,7 @@ DISPLAY_LABEL_X         = const(10)                 # Label Horizontal Start Coo
 
 # Buzzer
 BUZZER_PIN              = const(0)          # Buzzer Pin Number
-BUZZER_PWM_TIMER        = const(1)          # Buzzer PWM Timer Number
+BUZZER_PWM_TIMER        = const(2)          # Buzzer PWM Timer Number
 BUZZER_VOLUME           = 30.0              # Buzzer PWM Duty Cycle (if On)
 BUZZER_NOTE_CSHARP      = dict()            # Initialize Buzzer C# Notes Frequency Dictionary
 _CSHARP_BASE            = 17.323914         # C#0 Frequency
@@ -72,6 +72,10 @@ for octave in range(0, 12):                 # Store Frequencies for C#0 to C#12 
 FAN_PIN                 = const(32)         # Fan Pin Number
 FAN_PWM_FREQ            = const(500)        # Fan PWM Frequency
 FAN_PWM_TIMER           = const(3)          # Fan PWM Timer Number
+FAN_LOW_DUTY            = const(10)         # Low Throttle Duty Cycle for Fan
+FAN_HIGH_DUTY           = const(20)         # High Throttle Duty Cycle for Fan
+FAN_LOW_DUTY_TEMP       = const(30)         # Temperature that Triggers Low Throttle for Fan
+FAN_HIGH_DUTY_TEMP      = const(100)        # Temperature that Triggers High Throttle for Fan
 
 # Heaters
 HEATER_NAME_BOTTOM      = 'bottom'          # Bottom Heater Index Name
@@ -82,8 +86,11 @@ HEATER_LABEL            = {
 }
 HEATER_BOTTOM_PIN       = const(27)         # Bottom Heater Pin Number
 HEATER_TOP_PIN          = const(26)         # Top Heater Pin Number
-HEATER_PWM_FREQ         = const(10)         # PWM Frequency for All Heaters
-HEATER_PWM_TIMER        = const(2)          # PWM Timer Number for All Heaters
+HEATER_BOTTOM_PWM_TIMER = const(0)          # PWM Timer Number for Bottom Heater
+HEATER_TOP_PWM_TIMER    = const(1)          # PWM Timer Number for Top Heater
+HEATER_BOTTOM_MAX_DUTY  = const(50)         # 'Full Throttle' Duty for Bottom Heater
+HEATER_TOP_MAX_DUTY     = const(100)        # 'Full Throttle' Duty for Top Heater
+HEATER_PWM_FREQ         = const(2)          # PWM Frequency for All Heaters
 NUM_HEATERS             = const(2)          # Number of Physically Connected Heaters
 
 # Light
