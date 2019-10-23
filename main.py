@@ -142,12 +142,21 @@ def heatReadResponseThread(lock):
     temp_soaktime = 0.0
     heating_top = False
     heating_bottom = False
+    heating_bottom_reduced = False
+    initial_rampup = True       # Designates the first heatup stage so
+                                # ramp up can be decidedly faster
 
-    def _shutoff():
+    def _shutoff(soft = False):
         global do_reflow
         nonlocal soaking_started
+        nonlocal last_setpoint
+        nonlocal last_soaktime
         nonlocal temp_setpoint
         nonlocal temp_soaktime
+        nonlocal heating_top
+        nonlocal heating_bottom
+        nonlocal heating_bottom_reduced
+        nonlocal initial_rampup
 
         heater_top.duty(0)
         heater_bottom.duty(0)
@@ -159,7 +168,13 @@ def heatReadResponseThread(lock):
         temp_soaktime = 0.0
         heating_top = False
         heating_bottom = False
+        heating_bottom_reduced = False
+        initial_rampup = True
         buzzer.jingle()
+        if soft:
+            print ('Reflow process finished. Please, open oven door!')
+        else:
+            print ('Reflow process has been interrupted. Please, open oven door!')
 
     while True:
         now = ticks_ms()
@@ -180,12 +195,13 @@ def heatReadResponseThread(lock):
                 if temp_setpoint == 0:
                     if last_setpoint > 0.0:
                         # Setpoint of 0 at end of reflow cycle -> Shut off
-                        _shutoff()
+                        _shutoff(soft = True)
                     else:
                         last_setpoint = temp_setpoint
                         last_soaktime = temp_soaktime
                         # Try to read first target values from profile
                         (temp_setpoint, temp_soaktime) = reflow_profile_table.popleft()
+                        print ('Reflow process started...'
                         print ('Temperature setpoint:', temp_setpoint, 'Soak time:', temp_soaktime)
                         # May produce an IndexError if no more values are in
                         # the reflow table, which we'll handle in the
@@ -193,35 +209,54 @@ def heatReadResponseThread(lock):
                 if temp_setpoint != last_setpoint:
                     if (soaking_started > 0.0
                         and ticks_diff(now, soaking_started) >= temp_soaktime * 1000):
+                            print ('Soaking ended...')
                             soaking_started = 0.0
                             last_setpoint = temp_setpoint
                             last_soaktime = temp_soaktime
                             # Try to read next set of target values from profile
                             temp_setpoint, temp_soaktime = reflow_profile_table.popleft()
+                            print ('Temperature setpoint:', temp_setpoint, 'Soak time:', temp_soaktime)
+                            initial_rampup = False
                             # Possible IndexError will be handled later
                 if temp_setpoint > pcb_temp:
                     # Wait one cycle before turning on bottom heater
                     # to avoid a surge
                     if heating_top and not heating_bottom:
                         # Bottom heater output will be reduced while
-                        # soaking and after the first soaking phase
-                        heater_bottom.duty(100 if (soaking_started == 0 or last_soaktime == 0) else 50)
+                        # soaking and after the initial rampup phase
+                        bottom_duty = 100 if initial_rampup and not soaking_started else 50
+                        heater_bottom.duty(bottom_duty)
                         heating_bottom = True
+                        if bottom_duty < 100:
+                            heating_bottom_reduced = True
+                    if (heating_top and heating_bottom
+                        and not heating_bottom_reduced
+                        and temp_setpoint - 20 > pcbtemp):
+                        # Bottom heater output will be reduced shortly
+                        # before temperature setpoint is reached on initial
+                        # rampup to reduce overshoot
+                        heater_bottom.duty(50)
+                        heating_bottom_reduced = True
                     if not heating_top:
                         heater_top.duty(100)
                         heating_top = True
                 if heating_top and (temp_setpoint <= pcb_temp):
                     if not soaking_started:
                         soaking_started = ticks_ms()
+                        print ('Soaking started...')
                     heater_top.duty(0)
                     heater_bottom.duty(0)
                     heating_top = False
                     heating_bottom = False
+            except IndexError:
+                # There are no more values in the reflow profile
+                # SHUT OFF the heaters!
+                _shutoff(soft = True)
             except:
-                # Either there are no more values in the reflow profile
-                # or something bad happened. In any case:
+                # Something BAD happened.
                 # SHUT OFF the heaters!
                 _shutoff()
+
         else:
             # In case of a requested shutoff, i.e. by menu command
             if heating_top or heating_bottom or soaking_started:
