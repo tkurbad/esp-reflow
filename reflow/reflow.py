@@ -221,15 +221,15 @@ class HeatControl:
         # Mockup:
         reflow_profile = [1, 2, 3, 4, 5]
 
-        self._reflow_profile_table = deque((), len(reflow_profile))
+        reflow_profile_table = deque((), len(reflow_profile))
         ## TODO: Do something with the reflow_profile to generate the
         #          profile table
         # STATIC Values for now
-        self._reflow_profile_table.append((160, 80, 3))
-        self._reflow_profile_table.append((220, 55, 2))
+        reflow_profile_table.append((160, 80, 3))
+        reflow_profile_table.append((220, 55, 2))
 
-        self._reflow_profile_table
-        return self._reflow_profile_table
+        self._reflow_profile_table = reflow_profile_table
+        return reflow_profile_table
 
     def startReflow(self):
         self.buildReflowProfileTable()
@@ -256,7 +256,7 @@ class HeatControl:
     def reflow_profile(self):
         return self._reflow_profile
 
-    @reflow_profile_table.setter
+    @reflow_profile.setter
     def reflow_profile(self, reflow_profile):
         if not self._reflow:
             self._reflow_profile = reflow_profile
