@@ -34,6 +34,7 @@ class HeatControl:
         self.thermocouples  = thermocouples
         self.heater_top     = heater_top
         self.heater_bottom  = heater_bottom
+        self.fan            = fan
         self._reflow_profile = reflow_profile
         self.buzzer         = buzzer
         self.light          = light
