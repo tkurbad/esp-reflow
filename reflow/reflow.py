@@ -230,7 +230,8 @@ class HeatControl:
 
     def startReflow(self):
         self.buildReflowProfileTable()
-        light.pin.on()
+        if self.light is not None:
+            light.pin.on()
         self._reflow = True
 
     def cancelReflow(self):
