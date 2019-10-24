@@ -40,7 +40,6 @@ class HeatControl:
             HEATER_NAME_TOP: 0.0,
             HEATER_NAME_BOTTOM: 0.0
             }
-        self.pcb_thermocouple   = 
 
         self._reset()
 
@@ -120,7 +119,7 @@ class HeatControl:
             with self.lock as l:
                 self.thermocouples.read_temps()
                 pcb_temp = self.thermocouples.temp[
-                    self.pcb_thermocouple][0]
+                    PCB_THERMOCOUPLE][0]
 
             if pcb_temp > FAN_HIGH_DUTY_TEMP:
                 self.fan.duty(FAN_HIGH_DUTY)
