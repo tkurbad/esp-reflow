@@ -101,6 +101,7 @@ heat_control = HeatControl(reflowLock,
                            None,
                            buzzer = buzzer,
                            light = light)
+gc.collect()
 
 # Let Device Settle
 sleep(0.5)
