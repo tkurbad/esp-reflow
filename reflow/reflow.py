@@ -201,18 +201,18 @@ class HeatControl:
                         self._heating_top = False
                         self._heating_bottom = False
 
-            except:
-                # Something BAD happened.
-                # SHUT OFF the heaters!
-                self.shutdown()
-                raise
+                except:
+                    # Something BAD happened.
+                    # SHUT OFF the heaters!
+                    self.shutdown()
+                    raise
 
-        else:
-            # In case of a requested shutoff, i.e. by menu command
-            if heating_top or heating_bottom or soaking_started:
-                self.shutdown()
+            else:
+                # In case of a requested shutoff, i.e. by menu command
+                if heating_top or heating_bottom or soaking_started:
+                    self.shutdown()
 
-        sleep_ms(500)
+            sleep_ms(500)
 
     def buildReflowProfileTable(self, reflow_profile = None):
         if reflow_profile is None:
