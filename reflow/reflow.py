@@ -218,6 +218,9 @@ class HeatControl:
         if reflow_profile is None:
             reflow_profile = self.reflow_profile
 
+        # Mockup:
+        reflow_profile = [1, 2, 3, 4, 5]
+
         reflow_profile_table = deque((), len(reflow_profile))
         ## TODO: Do something with the reflow_profile to generate the
         #          profile table
