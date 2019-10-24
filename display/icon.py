@@ -1,4 +1,4 @@
-# Define Display Icons for ESP32 Micropython Driven SMD Reflow Oven
+# Display Icon Definitions for ESP32 Micropython Driven SMD Reflow Oven
 #
 # MIT license; Copyright (c) 2019 Torsten Kurbad
 
