@@ -258,5 +258,5 @@ class HeatControl:
 
     @reflow_profile.setter
     def reflow_profile(self, reflow_profile):
-        if not self._reflow:
+        if self._reflow is None or not self._reflow:
             self._reflow_profile = reflow_profile
