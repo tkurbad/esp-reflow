@@ -34,7 +34,7 @@ class HeatControl:
         self.thermocouples  = thermocouples
         self.heater_top     = heater_top
         self.heater_bottom  = heater_bottom
-        self.reflow_profile = reflow_profile
+        self._reflow_profile = reflow_profile
         self.buzzer         = buzzer
         self.light          = light
 
@@ -261,5 +261,5 @@ class HeatControl:
 
     @reflow_profile.setter
     def reflow_profile(self, reflow_profile):
-        if self._reflow is None or not self._reflow:
+        if not self._reflow:
             self._reflow_profile = reflow_profile
