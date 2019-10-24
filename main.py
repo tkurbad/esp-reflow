@@ -248,7 +248,7 @@ def heatReadResponseThread(lock):
                                  max(HEATER_BOTTOM_MAX_DUTY - 10 * i, 0))
                                  for i in range(1, overshoot_prevention + 1)]
 
-                            if overshoot_index < len(overshoot_steps)
+                            if overshoot_index < len(overshoot_steps):
                                 current_overshoot_step = overshoot_steps[overshoot_index]
 
                 if temp_setpoint > pcb_temp:
@@ -258,7 +258,7 @@ def heatReadResponseThread(lock):
                         heater_bottom.duty(HEATER_BOTTOM_MAX_DUTY)
                         heating_bottom = True
                     if not heating_top:
-                        heater_top.duty(HEATER_TOP_MAXY_DUTY)
+                        heater_top.duty(HEATER_TOP_MAX_DUTY)
                         heating_top = True
 
                     # Overshoot prevention
@@ -268,7 +268,7 @@ def heatReadResponseThread(lock):
                         heater_bottom.duty(current_overshoot_step[2])
                         overshoot_index += 1
 
-                        if overshoot_index < len(overshoot_steps)
+                        if overshoot_index < len(overshoot_steps):
                             current_overshoot_step = overshoot_steps[overshoot_index]
 
                 if heating_top and (temp_setpoint <= pcb_temp):
@@ -402,7 +402,8 @@ def reflowing():
 menuitems = [
     [reflowing, 'Start Reflow', run_reflow, None, 'Stop Reflow', cancel_reflow, None],
     [light.pin.value, 'Turn on Light', light.pin.on, None, 'Turn off Light', light.pin.off, None],
-    [sdcard.is_mounted, 'Mount SD Card', sdcard.mount, None, 'Unmount SD Card', sdcard.umount, None]
+    [sdcard.is_mounted, 'Mount SD Card', sdcard.mount, None, 'Unmount SD Card', sdcard.umount, None],
+    [False, 'Reboot', reset, None, None, None, None],
 ]
 
 # Set Up Menu
