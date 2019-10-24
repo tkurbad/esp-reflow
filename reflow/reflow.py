@@ -4,6 +4,8 @@
 # This is the Central Thread that Does All the Thermocouple Readings and
 # Heater Control
 
+import gc
+
 from ucollections import deque
 from utime import sleep, sleep_ms, ticks_diff, ticks_ms
 
@@ -212,7 +214,8 @@ class HeatControl:
                 if heating_top or heating_bottom or soaking_started:
                     self.shutdown()
 
-            sleep_ms(500)
+            gc.collect()
+            sleep_ms(400)
 
     def buildReflowProfileTable(self, reflow_profile = None):
         if reflow_profile is None:
