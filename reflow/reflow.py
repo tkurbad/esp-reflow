@@ -212,7 +212,7 @@ class HeatControl:
 
             else:
                 # In case of a requested shutoff, i.e. by menu command
-                if heating_top or heating_bottom or soaking_started:
+                if self._heating_top or self._heating_bottom or self._soaking_started:
                     self.shutdown()
 
             gc.collect()
