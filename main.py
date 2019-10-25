@@ -2,7 +2,7 @@
 #
 # MIT license; Copyright (c) 2019 Torsten Kurbad
 
-from gc import collect, mem_free
+from gc import collect, mem_alloc, mem_free, threshold
 from _thread import allocate_lock, start_new_thread
 
 from machine import reset
@@ -70,11 +70,13 @@ button_right = ButtonRight()
 button_down = ButtonDown()
 
 sleep_ms(500)
+threshold(mem_free() // 4 + mem_alloc())
 collect()
+
 # Initialize and Try to Mount SD Card
 sdcard = SDCardHandler()
 sleep_ms(500)
-collect()
+
 try:
     sdcard.mount()
 except MemoryError as e:
