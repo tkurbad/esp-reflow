@@ -67,7 +67,6 @@ TODO!!!
             self._clear()
         self.rotary.reset()
 
-    @micropython.native
     def _draw_item(self, index):
         """ Draw a Single Menu Item with Number 'index'. """
         if index == Menu.active:
