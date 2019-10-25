@@ -29,5 +29,5 @@ def connectWifi():
                 return
         sleep(10)
 
-_thread.start_new_thread(connectWifi, ())
+start_new_thread(connectWifi, ())
 
