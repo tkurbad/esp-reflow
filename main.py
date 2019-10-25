@@ -5,10 +5,8 @@
 from gc import collect, mem_free
 from _thread import allocate_lock, start_new_thread
 
-from machine import Pin, PWM, reset
-from ucollections import deque
-from uos import mount, umount
-from utime import sleep, sleep_ms, ticks_diff, ticks_ms
+from machine import reset
+from utime import sleep_ms
 
 from config import THERMOCOUPLE_BUSID, THERMOCOUPLE_BAUDRATE
 from config import THERMOCOUPLE_NAME1, THERMOCOUPLE_NAME2, THERMOCOUPLE_NAME3
@@ -46,9 +44,6 @@ thermocouples.add_tc(name = THERMOCOUPLE_NAME2,
 thermocouples.add_tc(name = THERMOCOUPLE_NAME3,
                      cs = THERMOCOUPLE_CS3)
 
-# Allocate a lock
-reflowLock = allocate_lock()
-
 # Get and Display IP Address
 ipaddress = STA().ipaddress
 tft.show_ipaddress(ipaddress)
@@ -74,6 +69,23 @@ button_left = ButtonLeft()
 button_right = ButtonRight()
 button_down = ButtonDown()
 
+sleep_ms(500)
+collect()
+# Initialize and Try to Mount SD Card
+sdcard = SDCardHandler()
+sleep_ms(500)
+collect()
+try:
+    sdcard.mount()
+except MemoryError as e:
+    print (e)
+    pass
+
+collect()
+
+# Allocate a lock
+reflowLock = allocate_lock()
+
 # Heat Control Object
 heat_control = HeatControl(lock = reflowLock,
                            thermocouples = thermocouples,
@@ -84,17 +96,6 @@ heat_control = HeatControl(lock = reflowLock,
                            buzzer = buzzer,
                            light = light)
 collect()
-
-# Let Device Settle
-sleep(0.5)
-
-# Initialize and Try to Mount SD Card
-sdcard = SDCardHandler()
-collect()
-try:
-    sdcard.mount()
-except MemoryError:
-    collect()
 
 
 ##
@@ -116,7 +117,7 @@ def statusDisplayThread(lock):
             tft.show_fan(fan.duty())
             tft.show_light(light.pin.value())
             tft.show_sdcard(sdcard.is_mounted())
-        sleep(1)
+        sleep_ms(1000)
 
 def buttonThread():
     # For now, just duplicate/emulate the rotary encoder
