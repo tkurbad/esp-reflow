@@ -6,9 +6,9 @@
 from gc import collect
 
 from hwspi.hwspi import HSPI
-from os import mount, umount
+from uos import mount, umount
 from sdcard import SDCard
-from time import sleep
+from utime import sleep
 
 from config import DOWN_PUSHBUTTON_PIN, UP_PUSHBUTTON_PIN
 from config import LEFT_PUSHBUTTON_PIN, RIGHT_PUSHBUTTON_PIN
@@ -135,8 +135,8 @@ class RotaryEncoder(Rotary):
         super().__init__(ROTARY_CLK_PIN,
                          ROTARY_DT_PIN,
                          ROTARY_PUSH_PIN,
-                         config.ROTARY_MIN_VAL,
-                         config.ROTARY_MAX_VAL)
+                         ROTARY_MIN_VAL,
+                         ROTARY_MAX_VAL)
 
 class SDCardHandler:
     """ Class to Handle Detection, Mounting, Unmounting, and Removal of
@@ -174,14 +174,14 @@ class SDCardHandler:
             else:
                 raise
 
-    def mount(self, mountpoint = '/sd'):
+    def mount(self, mountpoint = '/sd', readonly = True):
         """ Mount SD Card on Given Mountpoint. """
         self._mountpoint = None
         if self.sd is None:
             return False
         else:
             try:
-                mount(self.sd, mountpoint)
+                mount(self.sd, mountpoint, readonly = readonly)
                 self._mounted = True
             except OSError as e:
                 if e.args[0] == 5:
@@ -190,13 +190,13 @@ class SDCardHandler:
                         if self.lock is not None:
                             with self.lock as l:
                                 self.sd.init_card_v1()
-                                mount(self.sd, '/sd')
+                                mount(self.sd, mountpoint, readonly = readonly)
                                 self._mounted = True
                         else:
                             # Card Probably Has Been Detected as SD Card
                             # Version 2, although Being Version 1.
                             self.sd.init_card_v1()
-                            mount(self.sd, '/sd')
+                            mount(self.sd, mountpoint, readonly = readonly)
                             self._mounted = True
                     except OSError:
                         # Card Could not Be Mounted
