@@ -3,14 +3,24 @@
 #
 # MIT license; Copyright (c) 2019 Torsten Kurbad
 
-import gc
+from gc import collect
 
 from hwspi.hwspi import HSPI
 from os import mount, umount
 from sdcard import SDCard
 from time import sleep
 
-import config
+from config import DOWN_PUSHBUTTON_PIN, UP_PUSHBUTTON_PIN
+from config import LEFT_PUSHBUTTON_PIN, RIGHT_PUSHBUTTON_PIN
+from config import BUZZER_PIN, BUZZER_NOTE_CSHARP, BUZZER_PWM_TIMER, BUZZER_VOLUME
+from config import FAN_PIN, FAN_PWM_FREQ, FAN_PWM_TIMER
+from config import HEATER_PWM_FREQ
+from config import HEATER_BOTTOM_PIN, HEATER_BOTTOM_PWM_TIMER
+from config import HEATER_TOP_PIN, HEATER_TOP_PWM_TIMER
+from config import LIGHT_PIN
+from config import SDCARD_CS
+from config import ROTARY_CLK_PIN, ROTARY_DT_PIN, ROTARY_PUSH_PIN
+from config import ROTARY_MIN_VAL, ROTARY_MAX_VAL
 
 from reflow.basedevice import PushButton, PWMDevice, Rotary, SwitchedDevice
 
@@ -20,7 +30,7 @@ class ButtonDown(PushButton):
 
     def __init__(self):
         """ Initialize Push Button Using Pre-Configured Values. """
-        super().__init__(config.DOWN_PUSHBUTTON_PIN)
+        super().__init__(DOWN_PUSHBUTTON_PIN)
 
 
 class ButtonLeft(PushButton):
@@ -28,7 +38,7 @@ class ButtonLeft(PushButton):
 
     def __init__(self):
         """ Initialize Push Button Using Pre-Configured Values. """
-        super().__init__(config.LEFT_PUSHBUTTON_PIN)
+        super().__init__(LEFT_PUSHBUTTON_PIN)
 
 
 class ButtonRight(PushButton):
@@ -36,7 +46,7 @@ class ButtonRight(PushButton):
 
     def __init__(self):
         """ Initialize Push Button Using Pre-Configured Values. """
-        super().__init__(config.RIGHT_PUSHBUTTON_PIN)
+        super().__init__(RIGHT_PUSHBUTTON_PIN)
 
 
 class ButtonUp(PushButton):
@@ -44,7 +54,7 @@ class ButtonUp(PushButton):
 
     def __init__(self):
         """ Initialize Push Button Using Pre-Configured Values. """
-        super().__init__(config.UP_PUSHBUTTON_PIN)
+        super().__init__(UP_PUSHBUTTON_PIN)
 
 
 class Buzzer(PWMDevice):
@@ -52,17 +62,17 @@ class Buzzer(PWMDevice):
 
     def __init__(self):
         """ Initialize Buzzer Using Pre-Configured Values. """
-        super().__init__(config.BUZZER_PIN,
-                         freq = config.BUZZER_NOTE_CSHARP[0],
-                         timer = config.BUZZER_PWM_TIMER,
+        super().__init__(BUZZER_PIN,
+                         freq = BUZZER_NOTE_CSHARP[0],
+                         timer = BUZZER_PWM_TIMER,
                          duty = 0)
 
     def jingle(self):
         """ Play sequence (C#3 - C#8). """
         with self as buz:
-            buz.duty(config.BUZZER_VOLUME)
+            buz.duty(BUZZER_VOLUME)
             for octave in range(4, 9):
-                buz.freq(config.BUZZER_NOTE_CSHARP[octave])
+                buz.freq(BUZZER_NOTE_CSHARP[octave])
                 sleep(0.2)
 
 
@@ -71,9 +81,9 @@ class Fan(PWMDevice):
 
     def __init__(self):
         """ Initialize Fan Using Pre-Configured Values. """
-        super().__init__(config.FAN_PIN,
-                         freq = config.FAN_PWM_FREQ,
-                         timer = config.FAN_PWM_TIMER,
+        super().__init__(FAN_PIN,
+                         freq = FAN_PWM_FREQ,
+                         timer = FAN_PWM_TIMER,
                          duty = 0)
 
 
@@ -85,7 +95,7 @@ class Heater(PWMDevice):
             Values.
         """
         super().__init__(pin,
-                         freq = config.HEATER_PWM_FREQ,
+                         freq = HEATER_PWM_FREQ,
                          timer = timer,
                          duty = 0)
 
@@ -96,8 +106,8 @@ class HeaterBottom(Heater):
     def __init__(self):
         """ Initialize Bottom Heater Using Pre-Configured Pin Number.
         """
-        super().__init__(config.HEATER_BOTTOM_PIN,
-                         config.HEATER_BOTTOM_PWM_TIMER)
+        super().__init__(HEATER_BOTTOM_PIN,
+                         HEATER_BOTTOM_PWM_TIMER)
 
 
 class HeaterTop(Heater):
@@ -105,8 +115,8 @@ class HeaterTop(Heater):
 
     def __init__(self):
         """ Initialize Top Heater Using Pre-Configured Pin Number. """
-        super().__init__(config.HEATER_TOP_PIN,
-                         config.HEATER_TOP_PWM_TIMER)
+        super().__init__(HEATER_TOP_PIN,
+                         HEATER_TOP_PWM_TIMER)
 
 
 class Light(SwitchedDevice):
@@ -114,7 +124,7 @@ class Light(SwitchedDevice):
 
     def __init__(self):
         """ Initialize Light Switch Using Pre-Configured Pin Number. """
-        super().__init__(config.LIGHT_PIN)
+        super().__init__(LIGHT_PIN)
 
 
 class RotaryEncoder(Rotary):
@@ -122,9 +132,9 @@ class RotaryEncoder(Rotary):
 
     def __init__(self):
         """ Initialize Rotary Encoder Using Pre-Configured Values. """
-        super().__init__(config.ROTARY_CLK_PIN,
-                         config.ROTARY_DT_PIN,
-                         config.ROTARY_PUSH_PIN,
+        super().__init__(ROTARY_CLK_PIN,
+                         ROTARY_DT_PIN,
+                         ROTARY_PUSH_PIN,
                          config.ROTARY_MIN_VAL,
                          config.ROTARY_MAX_VAL)
 
@@ -142,7 +152,7 @@ class SDCardHandler:
             self.busid = HSPI
         self.cs = cs
         if self.cs is None:
-            self.cs = config.SDCARD_CS
+            self.cs = SDCARD_CS
         self.lock = lock
         self.sd = None
         self._mountpoint = None
@@ -157,7 +167,7 @@ class SDCardHandler:
     def init_card(self):
         """ Detect and Initialize SD Card. """
         try:
-            self.sd = SDCard(cs = config.SDCARD_CS)
+            self.sd = SDCard(cs = SDCARD_CS)
         except OSError as e:
             if 'no sd card' in e.args[0].lower():
                 self.sd = None
@@ -219,7 +229,7 @@ class SDCardHandler:
         if self.sd is not None:
             self.sd._spi.deinit()
             self.sd = None
-        gc.collect()
+        collect()
 
     def is_mounted(self):
         """ Return the Mount Status of the SD Card. """

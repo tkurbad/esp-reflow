@@ -2,7 +2,7 @@
 #
 # MIT license; Copyright (c) 2019 Torsten Kurbad
 
-import gc
+from gc import collect
 from machine import Pin, PWM
 from micropython import const
 from time import sleep_ms
@@ -67,7 +67,7 @@ class PWMDevice:
         """
         self.pwm.deinit()
         del(self.pwm)
-        gc.collect()
+        collect()
 
     def duty(self, duty = None):
         if duty is None:

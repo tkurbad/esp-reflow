@@ -8,7 +8,8 @@ from time import sleep
 
 from max31855 import MAX31855
 
-import config
+from config import THERMOCOUPLE_BAUDRATE, THERMOCOUPLE_BUSID
+
 
 class Thermocouple:
     """ Class to Manage and Read Several MAX31855 Thermocouple
@@ -31,7 +32,7 @@ class Thermocouple:
                                     % Thermocouple._busid)
             Thermocouple._busid = busid
         if Thermocouple._busid is None:
-            Thermocouple._busid = config.THERMOCOUPLE_BUSID
+            Thermocouple._busid = THERMOCOUPLE_BUSID
         if baudrate is not None:
             if ((Thermocouple._baudrate is not None)
                 and (Thermocouple._baudrate != baudrate)):
@@ -39,7 +40,7 @@ class Thermocouple:
                                    % Thermocouple._baudrate)
             Thermocouple._baudrate = baudrate
         if Thermocouple._baudrate is None:
-            Thermocouple._baudrate = config.THERMOCOUPLE_BAUDRATE
+            Thermocouple._baudrate = THERMOCOUPLE_BAUDRATE
 
     def add_tc(self, name, cs):
         """ Add and Initialize a Thermocouple with Index Name 'name' and

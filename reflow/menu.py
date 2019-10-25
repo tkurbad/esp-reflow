@@ -2,22 +2,15 @@
 #
 # MIT license; Copyright (c) 2019 Torsten Kurbad
 
-import gc
+from gc import collect
 from utime import sleep_ms
 
-import config
-
-# Cache config variables for performance
-MENU_WIDTH                  = config.MENU_WIDTH
-MENU_START_X                = config.MENU_START_X
-MENU_START_Y                = config.MENU_START_Y
-MENU_ITEM_OFFSET            = config.MENU_ITEM_OFFSET
-MENU_ITEM_SPACING_Y         = config.MENU_ITEM_SPACING_Y
-MENU_FONT                   = config.MENU_FONT
-MENU_ACTIVE_ITEM_COLOR      = config.MENU_ACTIVE_ITEM_COLOR
-MENU_ACTIVE_BG_COLOR        = config.MENU_ACTIVE_BG_COLOR
-MENU_INACTIVE_ITEM_COLOR    = config.MENU_INACTIVE_ITEM_COLOR
-MENU_INACTIVE_BG_COLOR      = config.MENU_INACTIVE_BG_COLOR
+from config import MENU_HEIGHT, MENU_WIDTH, MENU_START_X, MENU_START_Y
+from config import MENU_BG_COLOR, MENU_FONT
+from config import MENU_ITEM_OFFSET, MENU_ITEM_SPACING_Y
+from config import MENU_ACTIVE_ITEM_COLOR, MENU_ACTIVE_BG_COLOR
+from config import MENU_INACTIVE_ITEM_COLOR, MENU_INACTIVE_BG_COLOR
+from config import ROTARY_RANGE_BOUNDED
 
 
 class Menu:
@@ -49,20 +42,20 @@ TODO!!!
         self.rotary = rotary
         # Set Rotary Encoder to Bounded Mode, with Last Menu Item as Max
         # Value
-        self.rotary._range_mode = config.ROTARY_RANGE_BOUNDED
+        self.rotary._range_mode = ROTARY_RANGE_BOUNDED
         self.rotary._max_val = self.num_items - 1 if self.num_items > 0 else 0
         self.lock = lock
         self.font_height = MENU_FONT.height()
         self.clear()
-        gc.collect()
+        collect()
 
     def _clear(self):
         """ Clear Menu Area Using Menu Background Color. """
         self.display.fill_rectangle(MENU_START_X,
                                     MENU_START_Y,
                                     MENU_WIDTH,
-                                    config.MENU_HEIGHT,
-                                    config.MENU_BG_COLOR)
+                                    MENU_HEIGHT,
+                                    MENU_BG_COLOR)
 
     def clear(self):
         """ Clear Menu Area. Use Locking if Lock Has Been Provided. """
@@ -109,7 +102,7 @@ TODO!!!
             title = title2 if use_second() else title1
         else:
             title = title2 if use_second else title1
-        self.display.set_font(config.MENU_FONT)
+        self.display.set_font(MENU_FONT)
         # Display the Menu Item
         self.display.chars(title,
                            MENU_START_X + MENU_ITEM_OFFSET,
@@ -130,7 +123,7 @@ TODO!!!
         """
         for index in range(0, self.num_items):
             self.draw_item(index)
-        gc.collect()
+        collect()
 
     def callback_item(self, index):
         """ Run the Callback Function of Menu Item at 'index'. """

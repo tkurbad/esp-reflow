@@ -2,16 +2,16 @@
 #
 # MIT license; Copyright (c) 2019 Torsten Kurbad
 
-import esp
-import _thread
-import webrepl
+from esp import osdebug
+from _thread import start_new_thread
+#import webrepl
 
 from time import sleep
 from wlan_sta import STA
 
-esp.osdebug(None)
+osdebug(None)
 
-webrepl.start()
+#webrepl.start()
 
 ssids = [
     ('IWM', 'Be wary then; best safety lies in fear'),

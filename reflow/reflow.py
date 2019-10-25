@@ -4,25 +4,16 @@
 # This is the Central Thread that Does All the Thermocouple Readings and
 # Heater Control
 
-import gc
+from gc import collect
 
 from ucollections import deque
 from utime import sleep, sleep_ms, ticks_diff, ticks_ms
 
-import config
+from config import FAN_LOW_DUTY, FAN_HIGH_DUTY, FAN_LOW_DUTY_TEMP, FAN_HIGH_DUTY_TEMP
+from config import HEATER_BOTTOM_MAX_DUTY, HEATER_TOP_MAX_DUTY
+from config import HEATER_NAME_BOTTOM, HEATER_NAME_TOP
+from config import THERMOCOUPLE_NAME3 as PCB_THERMOCOUPLE
 
-##
-## Cache Some Configuration Variables
-##
-FAN_LOW_DUTY            = config.FAN_LOW_DUTY
-FAN_HIGH_DUTY           = config.FAN_HIGH_DUTY
-FAN_LOW_DUTY_TEMP       = config.FAN_LOW_DUTY_TEMP
-FAN_HIGH_DUTY_TEMP      = config.FAN_HIGH_DUTY_TEMP
-HEATER_BOTTOM_MAX_DUTY  = config.HEATER_BOTTOM_MAX_DUTY
-HEATER_TOP_MAX_DUTY     = config.HEATER_TOP_MAX_DUTY
-HEATER_NAME_BOTTOM      = config.HEATER_NAME_BOTTOM
-HEATER_NAME_TOP         = config.HEATER_NAME_TOP
-PCB_THERMOCOUPLE        = config.THERMOCOUPLE_NAME3
 
 class HeatControl:
     """ Central Heat Reading and Control Class. """
@@ -79,13 +70,14 @@ class HeatControl:
         return overshoot_steps
 
     def shutdown(self, soft = False):
-        self.reset()
+        self._reset()
         if self.buzzer is not None:
             self.buzzer.jingle()
         if soft:
             print ('Reflow process finished. Please, open oven door!')
         else:
             print ('Reflow process has been interrupted. Please, open oven door!')
+        self._reflow = False
 
     def heatReadResponse(self):
         """ Read Heater PWM Duty Settings and Thermocouple Values Every
@@ -154,26 +146,26 @@ class HeatControl:
                             if self._overshoot_step_index < len(overshoot_steps):
                                 self._current_overshoot_step = overshoot_steps[self._overshoot_step_index]
 
-                        if self._current_setpoint != self._last_setpoint:
-                            if (self._soaking_started > 0
-                                and ticks_diff(now, self._soaking_started) >= self._current_soaktime * 1000):
-                                print ('Soaking ended...')
-                                self._soaking_started = 0
-                                self._last_setpoint = self._current_setpoint
-                                # Try to read next set of target values from profile
-                                self._readNextSetpoint()
-                                print ('Temperature setpoint:',
-                                       self._current_setpoint,
-                                       'Soak time:',
-                                       self._current_soaktime)
+                    if self._current_setpoint != self._last_setpoint:
+                        if (self._soaking_started > 0
+                            and ticks_diff(now, self._soaking_started) >= self._current_soaktime * 1000):
+                            print ('Soaking ended...')
+                            self._soaking_started = 0
+                            self._last_setpoint = self._current_setpoint
+                            # Try to read next set of target values from profile
+                            self._readNextSetpoint()
+                            print ('Temperature setpoint:',
+                                   self._current_setpoint,
+                                   'Soak time:',
+                                   self._current_soaktime)
 
-                                # Calculate Overshoot Prevention
-                                overshoot_steps = self._calculateOvershootPreventionSteps()
+                            # Calculate Overshoot Prevention
+                            overshoot_steps = self._calculateOvershootPreventionSteps()
 
-                                if self._overshoot_step_index < len(overshoot_steps):
-                                    self._current_overshoot_step = overshoot_steps[self._overshoot_step_index]
+                            if self._overshoot_step_index < len(overshoot_steps):
+                                self._current_overshoot_step = overshoot_steps[self._overshoot_step_index]
 
-                    if temp_setpoint > pcb_temp:
+                    if self._current_setpoint > pcb_temp:
                         # Wait one cycle before turning on bottom heater
                         # to avoid a surge
                         if self._heating_top and not self._heating_bottom:
@@ -192,12 +184,12 @@ class HeatControl:
                                 self._current_overshoot_step[2])
                             self._overshoot_step_index += 1
 
-                            if self._overshoot_index < len(overshoot_steps):
-                                self._current_overshoot_step = self._overshoot_steps[overshoot_index]
+                            if self._overshoot_step_index < len(overshoot_steps):
+                                self._current_overshoot_step = overshoot_steps[self._overshoot_step_index]
 
                     if self._heating_top and (self._current_setpoint <= pcb_temp):
                         if not self._soaking_started:
-                            self._soaking_started = ticks_ms()
+                            self._soaking_started = now
                             print ('Soaking started...')
                         self.heater_top.duty(0)
                         self.heater_bottom.duty(0)
@@ -215,7 +207,7 @@ class HeatControl:
                 if self._heating_top or self._heating_bottom or self._soaking_started:
                     self.shutdown()
 
-            gc.collect()
+            collect()
             sleep_ms(400)
 
     def buildReflowProfileTable(self, reflow_profile = None):
@@ -238,12 +230,11 @@ class HeatControl:
     def startReflow(self):
         self.buildReflowProfileTable()
         if self.light is not None:
-            light.pin.on()
+            self.light.pin.on()
         self._reflow = True
 
     def cancelReflow(self):
-        self.reset()
-        sleep(1)
+        self.shutdown()
 
         # Make sure everything is shut off
         self.heater_top.duty(0)
