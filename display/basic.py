@@ -158,7 +158,6 @@ class Display(ILI9341):
             self._last_fan_duty = fan_duty
             self._fan_inactive = (fan_duty == 0)
 
-    @micropython.native
     def show_heaters(self, heater_duty):
         """ Display Currently Set Heater Duty Cycle Values in Heater
             Status Bar.
@@ -244,7 +243,6 @@ class Display(ILI9341):
                             DISPLAY_TOP_BAR_HEIGHT,
                             color = DISPLAY_TOP_BAR_BG_COLOR)
 
-    @micropython.native
     def show_temperatures(self, temperatures):
         """ Display Current Thermocouple Temperature Readings in Bottom
             Status Bar.
