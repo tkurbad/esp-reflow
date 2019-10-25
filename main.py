@@ -70,11 +70,13 @@ button_right = ButtonRight()
 button_down = ButtonDown()
 
 sleep_ms(500)
-threshold(mem_free() // 4 + mem_alloc())
-collect()
 
 # Initialize and Try to Mount SD Card
 sdcard = SDCardHandler()
+
+threshold(mem_free() // 4 + mem_alloc())
+collect()
+
 sleep_ms(500)
 
 try:
@@ -148,9 +150,6 @@ start_new_thread(statusDisplayThread, (reflowLock, ))
 
 # Start Reading Button Presses (without Locking)
 start_new_thread(buttonThread, ())
-
-# Run Garbage Collector
-collect()
 
 ##
 ## Main Menu
