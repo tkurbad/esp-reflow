@@ -169,3 +169,8 @@ MENU_ACTIVE_BG_COLOR    = color565(255, 240, 0)     # Active Menu Item Backgroun
 MENU_ACTIVE_ITEM_COLOR  = color565(0, 0, 240)       # Active Menu Item Text Color
 MENU_INACTIVE_BG_COLOR  = color565(0, 0, 240)       # Inactive Menu Item Background Color
 MENU_INACTIVE_ITEM_COLOR = color565(255, 240, 0)    # Inactive Menu Item Text Color
+
+# Reflow Profile Handling
+DEFAULT_PROFILE_FILE    = '/def_profile.json'   # Filename of Default Reflow Profile Saved to Flash
+DEFAULT_PROFILE_EXT     = '.prf'            # Default Filename Extension for Profiles
+DEFAULT_SD_MOUNTPATH    = '/sd'             # Default Path the SD Card is Mounted to

@@ -18,7 +18,7 @@ from config import HEATER_PWM_FREQ
 from config import HEATER_BOTTOM_PIN, HEATER_BOTTOM_PWM_TIMER
 from config import HEATER_TOP_PIN, HEATER_TOP_PWM_TIMER
 from config import LIGHT_PIN
-from config import SDCARD_CS
+from config import DEFAULT_SD_MOUNTPATH, SDCARD_CS
 from config import ROTARY_CLK_PIN, ROTARY_DT_PIN, ROTARY_PUSH_PIN
 from config import ROTARY_MIN_VAL, ROTARY_MAX_VAL
 
@@ -174,12 +174,14 @@ class SDCardHandler:
             else:
                 raise
 
-    def mount(self, mountpoint = '/sd', readonly = True):
+    def mount(self, mountpoint = None, readonly = True):
         """ Mount SD Card on Given Mountpoint. """
         self._mountpoint = None
         if self.sd is None:
             return False
         else:
+            if mountpoint is None:
+                mountpoint = DEFAULT_SD_MOUNTPATH
             try:
                 mount(self.sd, mountpoint, readonly = readonly)
                 self._mounted = True
