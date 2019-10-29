@@ -29,7 +29,7 @@ THERMOCOUPLE_LABEL      = {
 NUM_THERMOCOUPLES       = const(3)          # Number of Physically Connected Thermocouples
 
 # SD Card Settings
-SDCARD_BUSID            = HSPI              # Hardware SPI Bus Id for SD Card
+SDCARD_BUSID            = const(3)          # Hardware SPI Bus Id for SD Card
 SDCARD_BAUDRATE         = THERMOCOUPLE_BAUDRATE # Baudrate for SD Card Reads / Writes
 SDCARD_CS               = const(33)         # Chip Select Pin Number for SD Card
 

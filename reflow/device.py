@@ -5,9 +5,8 @@
 
 from gc import collect
 
-from hwspi.hwspi import HSPI
+from machine import SDCard
 from uos import mount, umount
-from sdcard import SDCard
 from utime import sleep
 
 from config import DOWN_PUSHBUTTON_PIN, UP_PUSHBUTTON_PIN
@@ -18,7 +17,7 @@ from config import HEATER_PWM_FREQ
 from config import HEATER_BOTTOM_PIN, HEATER_BOTTOM_PWM_TIMER
 from config import HEATER_TOP_PIN, HEATER_TOP_PWM_TIMER
 from config import LIGHT_PIN
-from config import DEFAULT_SD_MOUNTPATH, SDCARD_CS
+from config import DEFAULT_SD_MOUNTPATH, SDCARD_BUSID, SDCARD_CS
 from config import ROTARY_CLK_PIN, ROTARY_DT_PIN, ROTARY_PUSH_PIN
 from config import ROTARY_MIN_VAL, ROTARY_MAX_VAL
 
@@ -149,7 +148,7 @@ class SDCardHandler:
         """
         self.busid = busid
         if self.busid is None:
-            self.busid = HSPI
+            self.busid = SDCARD_BUSID
         self.cs = cs
         if self.cs is None:
             self.cs = SDCARD_CS
@@ -160,14 +159,14 @@ class SDCardHandler:
 
         if self.lock is not None:
             with lock as l:
-                self._init_card()
+                self.init_card()
         else:
             self.init_card()
 
     def init_card(self):
         """ Detect and Initialize SD Card. """
         try:
-            self.sd = SDCard(cs = SDCARD_CS)
+            self.sd = SDCard(slot = self.buisd, cs = self.cs)
         except OSError as e:
             if 'no sd card' in e.args[0].lower():
                 self.sd = None
@@ -186,25 +185,8 @@ class SDCardHandler:
                 mount(self.sd, mountpoint, readonly = readonly)
                 self._mounted = True
             except OSError as e:
-                if e.args[0] == 5:
-                    # Error #5 EIO
-                    try:
-                        if self.lock is not None:
-                            with self.lock as l:
-                                self.sd.init_card_v1()
-                                mount(self.sd, mountpoint, readonly = readonly)
-                                self._mounted = True
-                        else:
-                            # Card Probably Has Been Detected as SD Card
-                            # Version 2, although Being Version 1.
-                            self.sd.init_card_v1()
-                            mount(self.sd, mountpoint, readonly = readonly)
-                            self._mounted = True
-                    except OSError:
-                        # Card Could not Be Mounted
-                        self._mounted = False
-                else:
-                    raise
+                self._mounted = False
+                raise
         if self._mounted:
             self._mountpoint = mountpoint
         return self._mounted
@@ -229,7 +211,7 @@ class SDCardHandler:
         """ Umount and Deinitialize, i.e. Remove, SD Card. """
         self.umount()
         if self.sd is not None:
-            self.sd._spi.deinit()
+            self.sd.deinit()
             self.sd = None
         collect()
 
