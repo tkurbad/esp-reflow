@@ -27,7 +27,7 @@ Sn63Pb37
 220,60,2
 ```
 
-- The first line denotes that the profile is named `Sn63Pb`.
+- The first line denotes that the profile is named `Sn63Pb37`.
 - The second line instructs to heat up to `155°C` and then soak at that
   temperature for `80` seconds. While narrowing in on the setpoint of
   `155°C` there should be `3` overshoot prevention steps (i.e. gradual

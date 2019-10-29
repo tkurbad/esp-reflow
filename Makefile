@@ -29,6 +29,7 @@ deploy:
 	$(AMPY) put reflow/basedevice.mpy reflow/basedevice.mpy
 	$(AMPY) put reflow/device.mpy reflow/device.mpy
 	$(AMPY) put reflow/menu.mpy reflow/menu.mpy
+	$(AMPY) put reflow/profile.mpy reflow/profile.mpy
 	$(AMPY) put reflow/reflow.mpy reflow/reflow.mpy
 	$(AMPY) mkdir --exists-okay thermocouple
 	$(AMPY) put thermocouple/__init__.py thermocouple/__init__.py
