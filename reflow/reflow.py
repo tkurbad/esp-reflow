@@ -1,8 +1,6 @@
 # Heat Control Classes for ESP32 Micropython Driven SMD Reflow Oven
 #
 # MIT license; Copyright (c) 2019 Torsten Kurbad
-# This is the Central Thread that Does All the Thermocouple Readings and
-# Heater Control
 
 from gc import collect
 
