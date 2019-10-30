@@ -12,7 +12,7 @@ from hwspi.constants import HSPI, VSPI
 
 # Thermocouple Settings
 THERMOCOUPLE_BUSID      = HSPI              # Hardware SPI Bus Id for Thermocouples
-THERMOCOUPLE_BAUDRATE   = const(1320000)    # Baudrate for Thermocouple Reads
+THERMOCOUPLE_BAUDRATE   = const(5000000)    # Baudrate for Thermocouple Reads
 THERMOCOUPLE_CS1        = const(15)         # Chip Select Pin Number for 1st Thermocouple
 THERMOCOUPLE_CS2        = const(2)          # Chip Select Pin Number for 2nd Thermocouple
 THERMOCOUPLE_CS3        = const(4)          # Chip Select Pin Number for 3rd Thermocouple

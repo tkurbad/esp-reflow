@@ -17,8 +17,8 @@ from config import FAN_PIN, FAN_PWM_FREQ, FAN_PWM_TIMER
 from config import HEATER_PWM_FREQ
 from config import HEATER_BOTTOM_PIN, HEATER_BOTTOM_PWM_TIMER
 from config import HEATER_TOP_PIN, HEATER_TOP_PWM_TIMER
-from config import LIGHT_PIN
-from config import DEFAULT_SD_MOUNTPATH, SDCARD_CS
+from config import LIGHT_PIN, DEFAULT_SD_MOUNTPATH
+from config import SDCARD_BAUDRATE, SDCARD_BUSID, SDCARD_CS
 from config import ROTARY_CLK_PIN, ROTARY_DT_PIN, ROTARY_PUSH_PIN
 from config import ROTARY_MIN_VAL, ROTARY_MAX_VAL
 
@@ -167,7 +167,8 @@ class SDCardHandler:
     def init_card(self):
         """ Detect and Initialize SD Card. """
         try:
-            self.sd = SDCard(cs = SDCARD_CS)
+            self.sd = SDCard(busid = self.busid, cs = self.cs,
+                             baudrate = SDCARD_BAUDRATE)
         except OSError as e:
             if 'no sd card' in e.args[0].lower():
                 self.sd = None
