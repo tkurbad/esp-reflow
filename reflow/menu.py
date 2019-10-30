@@ -18,6 +18,7 @@ class Menu:
 
     active = 0          # Currently Active Menu Item
     last_active = 0     # Last Active Menu Item
+    paused = False      # Pause Menu Display
 
     def __init__(self, menuitems, display, rotary, button_up = None,
                  button_down = None, button_left = None,
@@ -111,6 +112,8 @@ TODO!!!
         """ Draw a Single Menu Item at 'index'. Use Locking if Lock Has
             Been Provided.
         """
+        if Menu.paused:
+            return
         if self.lock is None:
             self._draw_item(index)
             return
@@ -120,6 +123,8 @@ TODO!!!
     def draw_items(self):
         """ Draw All Menu Items, Highlighting the Currently Active One.
         """
+        if Menu.paused:
+            return
         for index in range(0, self.num_items):
             self.draw_item(index)
         collect()
@@ -154,7 +159,7 @@ TODO!!!
             TODO: Executes Callback Function of Menuitem Upon Encoder
                   Push Button Press.
         """
-        while True:
+        while True and not Menu.paused:
             # Read Rotary Encoder
             rotary_index, button_pressed = self.rotary.value()
             if button_pressed:
