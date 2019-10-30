@@ -6,7 +6,7 @@
 from gc import collect
 
 from hwspi.hwspi import HSPI
-from uos import mount, umount
+from uos import ilistdir, mount, umount
 from sdcard import SDCard
 from utime import sleep
 
@@ -160,7 +160,7 @@ class SDCardHandler:
 
         if self.lock is not None:
             with lock as l:
-                self._init_card()
+                self.init_card()
         else:
             self.init_card()
 
@@ -237,3 +237,23 @@ class SDCardHandler:
     def is_mounted(self):
         """ Return the Mount Status of the SD Card. """
         return self._mounted
+
+    def listFiles(self, extension = None):
+        """ List Regular Files with Filename Extension 'extension'. """
+        if not self._mounted:
+            raise OSError('SD card not mounted.')
+
+        if extension is None:
+            extension = ''
+
+        if self.lock is not None:
+            with self.lock as l:
+                files = [entry[0] for entry in ilistdir(self._mountpoint)
+                         if entry[0].endswith(extension)
+                         and entry[1] == 0x8000]    # only list regular files
+        else:
+            files = [entry[0] for entry in ilistdir(self._mountpoint)
+                     if entry[0].endswith(extension)
+                     and entry[1] == 0x8000]    # only list regular files
+        return files
+

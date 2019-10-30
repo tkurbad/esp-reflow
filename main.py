@@ -18,6 +18,7 @@ from reflow.device import ButtonDown, ButtonLeft, ButtonRight, ButtonUp
 from reflow.device import Buzzer, Fan, HeaterBottom, HeaterTop, Light
 from reflow.device import RotaryEncoder, SDCardHandler
 from reflow.menu import Menu
+from reflow.profile import ProfileControl
 from reflow.reflow import HeatControl
 from wlan_sta import STA
 
@@ -71,24 +72,17 @@ button_down = ButtonDown()
 
 sleep_ms(500)
 
+# Allocate a lock
+reflowLock = allocate_lock()
+
 # Initialize and Try to Mount SD Card
-sdcard = SDCardHandler()
+sdcard = SDCardHandler(lock = reflowLock)
 
 threshold(mem_free() // 4 + mem_alloc())
 collect()
 
-sleep_ms(500)
+sdcard.mount()
 
-try:
-    sdcard.mount()
-except MemoryError as e:
-    print (e)
-    pass
-
-collect()
-
-# Allocate a lock
-reflowLock = allocate_lock()
 
 # Heat Control Object
 heat_control = HeatControl(lock = reflowLock,
@@ -99,6 +93,10 @@ heat_control = HeatControl(lock = reflowLock,
                            reflow_profile = None,
                            buzzer = buzzer,
                            light = light)
+
+# Profile Control Object
+profile_control = ProfileControl(sdcard)
+
 collect()
 
 
@@ -141,6 +139,11 @@ def buttonThread():
         if button_right.value():
             rotary._button_pressed = True
 
+def profiles():
+    num = profile_control.listProfiles()
+    pro = profile_control.profiles
+    print ('Profile Count:', num)
+    print ('Profiles:', pro)
 
 # Start Reading Heat Values (with Locking - Lock Variable Given During Init)
 start_new_thread(heat_control.heatReadResponse, ())
@@ -173,6 +176,7 @@ menuitems = [
     [heat_control.isReflowing, 'Start Reflow', heat_control.startReflow, None, 'Stop Reflow', heat_control.cancelReflow, None],
     [light.pin.value, 'Turn on Light', light.pin.on, None, 'Turn off Light', light.pin.off, None],
     [sdcard.is_mounted, 'Mount SD Card', sdcard.mount, None, 'Unmount SD Card', sdcard.umount, None],
+    [False, 'List Profiles', profiles, None, None, None, None],
     [False, 'Reboot', reset, None, None, None, None],
 ]
 

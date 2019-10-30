@@ -24,7 +24,7 @@ class ReflowProfile:
     def name(self):
         return self._name
 
-    @property.setter
+    @name.setter
     def name(self, name):
         self._name = name
 
@@ -53,12 +53,9 @@ class ProfileControl:
     """ Class for Handling Reflow Profiles for Different Solder Alloys.
     """
 
-    def __init__(self, sdcard, current_profile = None, path = None,
-        extension = None):
+    def __init__(self, sdcard, current_profile = None, extension = None):
         """ Initialize Reflow Profile Class. """
-        self.path               = path
-        if path is None:
-            self.path           = DEFAULT_SD_MOUNTPATH
+        self.sdcard             = sdcard
         self.extension          = extension
         if extension is None:
             self.extension      = DEFAULT_PROFILE_EXT
@@ -67,20 +64,20 @@ class ProfileControl:
         self.buf                = bytearray(250)
         self.err                = None
 
-    def listProfiles(self, path = None, extension = None):
-        if path is None:
-            path = self.path or '/'
+    def listProfiles(self, extension = None):
         if extension is None:
             extension = self.extension
 
-        if not sdcard.is_mounted():
-            self.profiles = []
-            self.err = 'SD card not mounted'
-            return 0
+        try:
+            self.profiles = self.sdcard.listFiles(extension = extension)
+            return len(self.profiles)
+        except OSError as e:
+            if 'sd card not mounted' in '{}'.format(e.args[0].lower()):
+                self.err = e.args[0]
+                self.profiles = []
+            else:
+                raise (e)
 
-        self.profiles = [entry[0] for entry in ilistdir(path)
-                         if entry[0].endswith(extension)
-                         and entry[1] == 0x8000]    # only list regular files
         return len(self.profiles)
 
     def readProfile(self, profile_path):
@@ -91,7 +88,7 @@ class ProfileControl:
 
         temp_profile = ReflowProfile()
         # Profile Name
-        temp_profile.name(profile_lines[0])
+        temp_profile.name = profile_lines[0]
 
         # Profile Entries (Setpoint, Soaktime, Overshoot_Prevention_Strength)
         index = 0
