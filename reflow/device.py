@@ -257,3 +257,6 @@ class SDCardHandler:
                      and entry[1] == 0x8000]    # only list regular files
         return files
 
+    @property
+    def mountpoint(self):
+        return self._mountpoint
