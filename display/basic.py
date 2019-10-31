@@ -11,6 +11,9 @@ from config import DISPLAY_TOP_BAR_HEIGHT, DISPLAY_TOP_BAR_Y
 from config import DISPLAY_TOP_BAR_FG_COLOR, DISPLAY_TOP_BAR_BG_COLOR
 from config import DISPLAY_TOP_BAR_HEIGHT, DISPLAY_TOP_BAR_FONT
 from config import DISPLAY_TOP_BAR_TEXT_X, DISPLAY_TOP_BAR_TEXT_Y
+from config import DISPLAY_PROFILE_FG_COLOR, DISPLAY_PROFILE_BG_COLOR
+from config import DISPLAY_PROFILE_LABEL, DISPLAY_PROFILE_LABEL_Y
+from config import DISPLAY_PROFILE_FONT, DISPLAY_PROFILE_DELIM_Y
 from config import DISPLAY_HEATER_FG_COLOR, DISPLAY_HEATER_BG_COLOR
 from config import DISPLAY_HEATER_LABEL, DISPLAY_HEATER_LABEL_Y
 from config import DISPLAY_HEATER_TEXT_X, DISPLAY_HEATER_TEXT_Y
@@ -69,6 +72,11 @@ class Display(ILI9341):
                             DISPLAY_TOP_BAR_HEIGHT,
                             color = DISPLAY_TOP_BAR_BG_COLOR)
         self.fill_rectangle(0,
+                            DISPLAY_PROFILE_DELIM_Y,
+                            DISPLAY_WIDTH,
+                            1,
+                            color = DISPLAY_DELIM_COLOR)
+        self.fill_rectangle(0,
                             DISPLAY_HEATER_DELIM_Y,
                             DISPLAY_WIDTH,
                             1,
@@ -83,10 +91,14 @@ class Display(ILI9341):
         self.ipaddress_x = self.chars('IP ',
                                       DISPLAY_TOP_BAR_TEXT_X,
                                       DISPLAY_TOP_BAR_TEXT_Y)
-        # Heater Status Bar Label
+        # Reflow Profile Status Bar Label
         self.set_font(DISPLAY_LABEL_FONT)
         self.set_color(DISPLAY_LABEL_FG_COLOR,
                        DISPLAY_LABEL_BG_COLOR)
+        self.chars(DISPLAY_PROFILE_LABEL,
+                   DISPLAY_LABEL_X,
+                   DISPLAY_PROFILE_LABEL_Y)
+        # Heater Status Bar Label
         self.chars(DISPLAY_HEATER_LABEL,
                    DISPLAY_LABEL_X,
                    DISPLAY_HEATER_LABEL_Y)
