@@ -83,6 +83,11 @@ collect()
 
 sdcard.mount()
 
+# Profile Control Object
+profile_control = ProfileControl(sdcard)
+
+# Try to Get Current Profile
+current_profile = profile_control.getDefaultProfile()
 
 # Heat Control Object
 heat_control = HeatControl(lock = reflowLock,
@@ -90,12 +95,9 @@ heat_control = HeatControl(lock = reflowLock,
                            heater_top = heater_top,
                            heater_bottom = heater_bottom,
                            fan = fan,
-                           reflow_profile = None,
+                           reflow_profile = current_profile,
                            buzzer = buzzer,
                            light = light)
-
-# Profile Control Object
-profile_control = ProfileControl(sdcard)
 
 collect()
 
@@ -162,22 +164,43 @@ start_new_thread(buttonThread, ())
 
 # Define Menu Items
 #  Format:
-#   OrderedDict with Menu Item Ids as Keys (Arbitrary Strings)
-#    and
-#   lists [trigger t, (label0, callback0, cb0 options if trigger == False), (label1, callback1, cb1 options if trigger == True)]
+#   [show_title2, title1, callback1, arguments1, title2, callback2, arguments2]
+#
+#   Explanation of the Fields:
+#
+#   - show_title2: Boolean or Callable that Denotes whether to Show title1 or title2
+#                  and whether to Activate callback1(arguments1) or callback2(arguments2)
+#                  Respectively.
+#                  For Static Entries, Use Booleans. For Dynamic Menu Entry
+#                  Toggling, a Callable Should be Used.
+#
+#   - title1     : Menu Item Title that is Displayed if show_title2 is False.
+#
+#   - callback1  : Callback Function that is Activated by Choosing the Menu
+#                  Item while title1 is Active.
+#
+#   - arguments1 : Tuple with Arguments to callback1 (or None for no Arguments).
+#
+#   - title2     : Menu Item Title that is Displayed if show_title2 is True.
+#
+#   - callback2  : Callback Function that is Activated by Choosing the Menu
+#                  Item while title2 is Active.
+#
+#   - arguments2 : Tuple with Arguments to callback2 (or None for no Arguments).
+#
 #
 # Example Static Menu Item
-#  calibrate = [False, ('Calibrate', calibrate, (test = 1)), (None, None, None)]
+#  calibrate = [False, 'Calibrate', calibrate, ('x', 1), None, None, None]
 #
 # Example Dynamic Menu Item
-#  sdcard = [sd_card_mounted, ('Mount SD Card', mount_sd, None), ('Umount SD Card', umount_sd, None)]
+#  sdcard = [sd_card_mounted, 'Mount SD Card', mount_sd, None, 'Unmount SD Card', umount_sd, None]
 
 menuitems = [
-    [heat_control.isReflowing, 'Start Reflow', heat_control.startReflow, None, 'Stop Reflow', heat_control.cancelReflow, None],
+    [False, 'Load Profile from SD', profiles, None, None, None, None],
+    [HeatControl.isReflowing, 'Start Reflow Process', heat_control.startReflow, None, 'Stop Reflow Process', heat_control.cancelReflow, None],
     [light.pin.value, 'Turn on Light', light.pin.on, None, 'Turn off Light', light.pin.off, None],
     [sdcard.is_mounted, 'Mount SD Card', sdcard.mount, None, 'Unmount SD Card', sdcard.umount, None],
-    [False, 'List Profiles', profiles, None, None, None, None],
-    [False, 'Reboot', reset, None, None, None, None],
+    [False, 'Restart', reset, None, None, None, None],
 ]
 
 # Set Up Menu
@@ -190,22 +213,6 @@ menu = Menu(menuitems, tft, rotary, lock = reflowLock)
 
 # Initial Menu Display
 menu.draw_items()
-
-# Play Jingle
-#buzzer.jingle()
-
-# Print Initial Amount of Free Memory
-print ('Free Memory:', mem_free())
-###
-# IDEE:
-# Callback-Funktionen / IRQ-Handler fuer Rotary konfigurierbar machen
-# a la rotary.button_callback(callback)
-###
-
-##
-# TODO:
-# - SD-Karten Filebrowser
-# - File-Headers ili9341 Modul
 
 try:
     """ Handle Menu Input. """
