@@ -10,6 +10,13 @@ from ili9341.constants import DEFAULT_HEIGHT, DEFAULT_WIDTH
 from ili9341.fonts import tt14, tt24, verdanab16
 from hwspi.constants import HSPI, VSPI
 
+# Generic
+COLOR_0                 = const(0)          # color565(0, 0, 0)
+COLOR_0_0_240           = const(30)         # color565(0, 0, 240)
+COLOR_200               = const(52825)      # color565(200, 200, 200)
+COLOR_220               = const(57083)      # color565(220, 220, 220)
+COLOR_255_240_0         = const(65408)      # color565(255, 240, 0)
+
 # Thermocouple Settings
 THERMOCOUPLE_BUSID      = HSPI              # Hardware SPI Bus Id for Thermocouples
 THERMOCOUPLE_BAUDRATE   = const(5000000)    # Baudrate for Thermocouple Reads
@@ -43,20 +50,20 @@ DISPLAY_HEIGHT          = DEFAULT_HEIGHT    # Height of TFT Display in Pixels
 DISPLAY_WIDTH           = DEFAULT_WIDTH     # Width of TFT Display in Pixels
 
 # Display Basic Color / Font Settings
-DISPLAY_BG_COLOR        = color565(0, 0, 0)         # Standard Background Color
+DISPLAY_BG_COLOR        = COLOR_0           # Standard Background Color
 #  Top Status Bar (IP Address, SD Card Status, ...)
-DISPLAY_TOP_BAR_BG_COLOR = color565(200, 200, 200)  # Top Status Bar Background Color
-DISPLAY_TOP_BAR_FG_COLOR = DISPLAY_BG_COLOR         # Top Status Bar Foreground Color
+DISPLAY_TOP_BAR_BG_COLOR = COLOR_200  # Top Status Bar Background Color
+DISPLAY_TOP_BAR_FG_COLOR = COLOR_0          # Top Status Bar Foreground Color
 #  Bottom Status Bars (Heater Activity, Thermocouple Readings)
-DISPLAY_LOW_BAR_BG_COLOR = DISPLAY_BG_COLOR         # Lower Status Bars Background Color
-DISPLAY_LOW_BAR_FG_COLOR = color565(200, 200, 200)  # Lower Status Bars Foreground Color
+DISPLAY_LOW_BAR_BG_COLOR = COLOR_0          # Lower Status Bars Background Color
+DISPLAY_LOW_BAR_FG_COLOR = COLOR_200        # Lower Status Bars Foreground Color
 #  Delimiters Between Bottom Status Bars
-DISPLAY_DELIM_COLOR     = color565(200, 200, 200)   # Horizontal Delimiter Line Color
+DISPLAY_DELIM_COLOR     = COLOR_200         # Horizontal Delimiter Line Color
 #  Bottom Status Bar Label Settings ('Heater Activity %', 'Thermocouple Celsius', ...)
-DISPLAY_LABEL_FG_COLOR  = color565(200, 200, 200)   # Label Foreground Color
-DISPLAY_LABEL_BG_COLOR  = color565(0, 0, 0)         # Label Background Color
-DISPLAY_LABEL_FONT      = tt14                      # Label Font
-DISPLAY_LABEL_X         = const(10)                 # Label Horizontal Start Coordinate
+DISPLAY_LABEL_FG_COLOR  = COLOR_200         # Label Foreground Color
+DISPLAY_LABEL_BG_COLOR  = COLOR_0           # Label Background Color
+DISPLAY_LABEL_FONT      = tt14              # Label Font
+DISPLAY_LABEL_X         = const(10)         # Label Horizontal Start Coordinate
 
 # Buzzer
 BUZZER_PIN              = const(0)          # Buzzer Pin Number
@@ -124,6 +131,13 @@ DISPLAY_TOP_BAR_TEXT_Y  = const(2)          # Top Status Bar Vertical Text Start
 DISPLAY_FAN_ICON_X      = const(145)        # Top Status Bar Cooling Fan Icon Horizontal Start Coordinate
 DISPLAY_LIGHT_ICON_X    = const(202)        # Top Status Bar Light Indicator Icon Horizontal Start Coordinate
 DISPLAY_SD_ICON_X       = const(220)        # Top Status Bar SD Card Icon Horizontal Start Coordinate
+#  Profile Status Bar
+DISPLAY_PROFILE_FONT    = tt24              # Reflow Profile Status Bar Font
+DISPLAY_PROFILE_LABEL   = 'Current Profile' # Reflow Profile Status Label
+DISPLAY_PROFILE_LABEL_Y = const(145)        # Reflow Profile Status Label Vertical Start Coordinate
+DISPLAY_PROFILE_DELIM_Y = const(147)        # Reflow Profile  Delimiter Line Vertical Coordinate
+DISPLAY_PROFILE_BG_COLOR = COLOR_0          # Reflow Profile Status Bar Background Color
+DISPLAY_PROFILE_FG_COLOR = COLOR_220        # Reflow Profile Status Bar Foreground Color
 #  Heater Status Bar
 DISPLAY_HEATER_FONT     = tt24              # Heater Status Bar Font
 DISPLAY_HEATER_LABEL    = 'Heater Activity %'       # Heater Status Label
@@ -134,8 +148,8 @@ DISPLAY_HEATER_TEXT_X   = {                 # Status Text Horizontal Start Coord
     HEATER_NAME_TOP: const(10)              # ... for Top Heater
 }
 DISPLAY_HEATER_TEXT_Y   = const(224)        # Heater Status Text Vertical Start Coordinate
-DISPLAY_HEATER_BG_COLOR = DISPLAY_BG_COLOR          # Heater Status Bar Background Color
-DISPLAY_HEATER_FG_COLOR = color565(220, 220, 220)   # Heater Status Bar Foreground Color
+DISPLAY_HEATER_BG_COLOR = COLOR_0           # Heater Status Bar Background Color
+DISPLAY_HEATER_FG_COLOR = COLOR_220         # Heater Status Bar Foreground Color
 #  Thermocouple Status Bars
 DISPLAY_LOW_BAR_LABEL1  = 'Thermocouple '   # Thermocouple Status Label Part 1
 DISPLAY_LOW_BAR_LABEL2  = 'C'               # Thermocouple Status Label Part 2
@@ -153,8 +167,8 @@ DISPLAY_LOW_BAR_TEXT_Y  = {                 # Status Text Vertical Start Coordin
     THERMOCOUPLE_NAME3: const(293),         # ... for 3rd Thermocouple Label
     THERMOCOUPLE_NAME4: const(293)          # ... for MAX31855 Internal Sensor Label
 }
-DISPLAY_THERMOCOUPLE_BG_COLOR = DISPLAY_BG_COLOR        # Thermocouple Status Background Color
-DISPLAY_THERMOCOUPLE_FG_COLOR = color565(220, 220, 220) # Thermocouple Status Foreground Color
+DISPLAY_THERMOCOUPLE_BG_COLOR = COLOR_0     # Thermocouple Status Background Color
+DISPLAY_THERMOCOUPLE_FG_COLOR = COLOR_220   # Thermocouple Status Foreground Color
 
 # TFT Display Menu Settings
 MENU_FONT               = verdanab16        # Menu Font
@@ -164,11 +178,11 @@ MENU_HEIGHT             = const(118)        # Menu Area Height in Pixels
 MENU_WIDTH              = const(230)        # Menu Area Width in Pixels
 MENU_ITEM_OFFSET        = const(5)          # Menu Item Offset from Horiz./Vert. Start of Menu Area
 MENU_ITEM_SPACING_Y     = const(24)         # Vertical Spacing Between Menu Items
-MENU_BG_COLOR           = color565(0, 0, 240)       # Menu Area Background Color
-MENU_ACTIVE_BG_COLOR    = color565(255, 240, 0)     # Active Menu Item Background Color
-MENU_ACTIVE_ITEM_COLOR  = color565(0, 0, 240)       # Active Menu Item Text Color
-MENU_INACTIVE_BG_COLOR  = color565(0, 0, 240)       # Inactive Menu Item Background Color
-MENU_INACTIVE_ITEM_COLOR = color565(255, 240, 0)    # Inactive Menu Item Text Color
+MENU_BG_COLOR           = COLOR_0_0_240     # Menu Area Background Color
+MENU_ACTIVE_BG_COLOR    = COLOR_255_240_0   # Active Menu Item Background Color
+MENU_ACTIVE_ITEM_COLOR  = COLOR_0_0_240     # Active Menu Item Text Color
+MENU_INACTIVE_BG_COLOR  = COLOR_0_0_240     # Inactive Menu Item Background Color
+MENU_INACTIVE_ITEM_COLOR = COLOR_255_240_0  # Inactive Menu Item Text Color
 
 # Reflow Profile Handling
 DEFAULT_PROFILE_FILE    = '/def_profile.json'   # Filename of Default Reflow Profile Saved to Flash
