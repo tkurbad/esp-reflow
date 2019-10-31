@@ -13,8 +13,8 @@ from config import MENU_INACTIVE_ITEM_COLOR, MENU_INACTIVE_BG_COLOR
 from config import ROTARY_RANGE_BOUNDED
 
 
-class Menu:
-    """ Main Menu Display and Handling Class. """
+class BaseMenu(object):
+    """ Base Class for On Screen Menus. """
 
     active = 0          # Currently Active Menu Item
     last_active = 0     # Last Active Menu Item
@@ -26,8 +26,7 @@ class Menu:
         """ Initialize Menu Area.
 
             Parameters:
-                menuitems           - List of
-TODO!!!
+                menuitems           - List of Menuitems to Display
                 display             - A display.basic.Display Object
                 rotary              - A reflow.device.Rotary Object
                 button_X            - Tuples of 3 Elements:
@@ -69,6 +68,70 @@ TODO!!!
         self.rotary.reset()
 
     def _draw_item(self, index):
+        """ Overwrite with Specific Implementation. """
+        pass
+
+    def draw_item(self, index):
+        """ Draw a Single Menu Item at 'index'. Use Locking if Lock Has
+            Been Provided.
+        """
+        if Menu.paused:
+            return
+        if self.lock is None:
+            self._draw_item(index)
+            return
+        with self.lock as l:
+            self._draw_item(index)
+
+    def draw_items(self):
+        """ Draw All Menu Items, Highlighting the Currently Active One.
+        """
+        if Menu.paused:
+            return
+        for index in range(0, self.num_items):
+            self.draw_item(index)
+        collect()
+
+    def callback_item(self, index):
+        """ Overwrite with Specific Implementation. """
+        pass
+
+    def loop(self):
+        """ Main Menu Loop. Checks for Rotary Encoder Updates and
+            (De-)Activates Menu Items Accordingly.
+
+            TODO: Executes Callback Function of Menuitem Upon Encoder
+                  Push Button Press.
+        """
+        while True and not Menu.paused:
+            # Read Rotary Encoder
+            rotary_index, button_pressed = self.rotary.value()
+            if button_pressed:
+                self.callback_item(Menu.active)
+                sleep_ms(50)
+                continue
+            if Menu.active != rotary_index:
+                # Rotary Encoder Has Been Turned
+                # Memorize Last Active Menu Item
+                Menu.last_active = Menu.active
+                # Set New Active Menu Item
+                Menu.active = rotary_index
+                if self.lock is not None:
+                    with self.lock as l:
+                        # Display New Active Menu Item as Active
+                        self._draw_item(Menu.active)
+                        # Display Last Active Menu Item as Inactive
+                        self._draw_item(Menu.last_active)
+                else:
+                    self._draw_item(Menu.active)
+                    self._draw_item(Menu.last_active)
+            sleep_ms(40)
+
+
+class Menu(BaseMenu):
+    """ Main Menu Display and Handling Class. """
+
+    def _draw_item(self, index):
         """ Draw a Single Menu Item with Number 'index'. """
         if index == Menu.active:
             # Menu Item Is Currently Active - Set Colors Accordingly and
@@ -108,26 +171,6 @@ TODO!!!
                            MENU_START_X + MENU_ITEM_OFFSET,
                            MENU_START_Y + MENU_ITEM_OFFSET + (index * MENU_ITEM_SPACING_Y))
 
-    def draw_item(self, index):
-        """ Draw a Single Menu Item at 'index'. Use Locking if Lock Has
-            Been Provided.
-        """
-        if Menu.paused:
-            return
-        if self.lock is None:
-            self._draw_item(index)
-            return
-        with self.lock as l:
-            self._draw_item(index)
-
-    def draw_items(self):
-        """ Draw All Menu Items, Highlighting the Currently Active One.
-        """
-        if Menu.paused:
-            return
-        for index in range(0, self.num_items):
-            self.draw_item(index)
-        collect()
 
     def callback_item(self, index):
         """ Run the Callback Function of Menu Item at 'index'. """
@@ -150,35 +193,5 @@ TODO!!!
             callback()
         else:
             callback(params)
+        sleep_ms(40)
         self.draw_item(index)
-
-    def loop(self):
-        """ Main Menu Loop. Checks for Rotary Encoder Updates and
-            (De-)Activates Menu Items Accordingly.
-
-            TODO: Executes Callback Function of Menuitem Upon Encoder
-                  Push Button Press.
-        """
-        while True and not Menu.paused:
-            # Read Rotary Encoder
-            rotary_index, button_pressed = self.rotary.value()
-            if button_pressed:
-                self.callback_item(Menu.active)
-                sleep_ms(50)
-                continue
-            if Menu.active != rotary_index:
-                # Rotary Encoder Has Been Turned
-                # Memorize Last Active Menu Item
-                Menu.last_active = Menu.active
-                # Set New Active Menu Item
-                Menu.active = rotary_index
-                if self.lock is not None:
-                    with self.lock as l:
-                        # Display New Active Menu Item as Active
-                        self._draw_item(Menu.active)
-                        # Display Last Active Menu Item as Inactive
-                        self._draw_item(Menu.last_active)
-                else:
-                    self._draw_item(Menu.active)
-                    self._draw_item(Menu.last_active)
-            sleep_ms(40)
