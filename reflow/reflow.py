@@ -12,9 +12,13 @@ from config import HEATER_BOTTOM_MAX_DUTY, HEATER_TOP_MAX_DUTY
 from config import HEATER_NAME_BOTTOM, HEATER_NAME_TOP
 from config import THERMOCOUPLE_NAME3 as PCB_THERMOCOUPLE
 
+from reflow.profile import ReflowProfile
+
 
 class HeatControl:
     """ Central Heat Reading and Control Class. """
+
+    _reflow = False
 
     def __init__(self, lock, thermocouples, heater_top, heater_bottom,
                  fan, reflow_profile, buzzer = None, light = None):
@@ -39,7 +43,7 @@ class HeatControl:
         self.heater_top.duty(0)
         self.heater_bottom.duty(0)
         self._reflow_profile_table      = deque((), 5, 1)
-        self._reflow                    = False
+        HeatControl._reflow             = False
         self._soaking_started           = 0
         self._last_setpoint             = 0
         self._current_setpoint          = 0
@@ -75,14 +79,14 @@ class HeatControl:
             print ('Reflow process finished. Please, open oven door!')
         else:
             print ('Reflow process has been interrupted. Please, open oven door!')
-        self._reflow = False
+        HeatControl._reflow = False
 
     def heatReadResponse(self):
         """ Read Heater PWM Duty Settings and Thermocouple Values Every
             500 ms.
-            If Heating is Requested by the Boolean 'self._reflow', Do a
-            "Bang Bang" Control of the Upper and Lower Heaters to Follow
-            the Currently Loaded Reflow Profile.
+            If Heating is Requested by the Class variable
+            'HeatControl._reflow', Do a "Bang Bang" Control of the Upper
+            and Lower Heaters to Follow the Currently Loaded Reflow Profile.
     
             The Following Rule Applies for Each Temperature Setpoint in the
             Profile:
@@ -121,7 +125,7 @@ class HeatControl:
             else:
                 self.fan.duty(0)
 
-            if self._reflow:
+            if HeatControl._reflow:
                 try:
                     if self._current_setpoint == 0:
                         if self._last_setpoint > 0:
@@ -210,17 +214,12 @@ class HeatControl:
 
     def buildReflowProfileTable(self, reflow_profile = None):
         if reflow_profile is None:
-            reflow_profile = self.reflow_profile
-
-        # Mockup:
-        reflow_profile = [1, 2, 3, 4, 5]
+            reflow_profile = self.reflow_profile or ReflowProfile()
 
         reflow_profile_table = deque((), len(reflow_profile))
-        ## TODO: Do something with the reflow_profile to generate the
-        #          profile table
-        # STATIC Values for now
-        reflow_profile_table.append((160, 80, 3))
-        reflow_profile_table.append((220, 55, 2))
+
+        for (setpoint, soaktime, overshoot_prev) in reflow_profile.entries:
+            reflow_profile_table.append((setpoint, soaktime, overshoot_prev))
 
         self._reflow_profile_table = reflow_profile_table
         return reflow_profile_table
@@ -229,7 +228,7 @@ class HeatControl:
         self.buildReflowProfileTable()
         if self.light is not None:
             self.light.pin.on()
-        self._reflow = True
+        HeatControl._reflow = True
 
     def cancelReflow(self):
         self.shutdown()
@@ -238,8 +237,9 @@ class HeatControl:
         self.heater_top.duty(0)
         self.heater_bottom.duty(0)
 
-    def isReflowing(self):
-        return self._reflow
+    @classmethod
+    def isReflowing(cls):
+        return cls._reflow
 
     @property
     def heater_duty(self):
@@ -251,5 +251,5 @@ class HeatControl:
 
     @reflow_profile.setter
     def reflow_profile(self, reflow_profile):
-        if not self._reflow:
+        if not HeatControl._reflow:
             self._reflow_profile = reflow_profile
