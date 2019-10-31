@@ -10,15 +10,14 @@ from uos import ilistdir, stat
 
 from config import DEFAULT_PROFILE_FILE, DEFAULT_PROFILE_EXT, DEFAULT_SD_MOUNTPATH
 
+from reflow.menu import BaseMenu
+
+
 class ReflowProfile:
     """ Class for Holding Data of a Single Reflow Profile. """
     def __init__(self, name = None, entries = []):
         self._name = name
         self._entries = entries
-        self.entry_index = 0
-
-    def reset(self):
-        self.entry_index = 0
 
     @property
     def name(self):
@@ -29,12 +28,8 @@ class ReflowProfile:
         self._name = name
 
     @property
-    def next_entry(self):
-        try:
-            self.entry_index += 1
-            return self._entries[self.entry_index]
-        except IndexError:
-            return None
+    def entries(self):
+        return self._entries
 
     def append_entry(self, line):
         linesplit = line.split(',')
@@ -47,6 +42,9 @@ class ReflowProfile:
             raise ValueError('Non numeric value in profile line {0:d}'.format(index))
 
         self.entries.append(intline)
+
+    def __len__(self):
+        return len(self.entries)
 
 
 class ProfileControl:
@@ -78,6 +76,7 @@ class ProfileControl:
             else:
                 raise (e)
 
+        self.profiles = sorted(self.profiles)
         return len(self.profiles)
 
     def readProfile(self, profile_path):
@@ -125,3 +124,24 @@ class ProfileControl:
             default_filename = DEFAULT_PROFILE_FILE
         with open(default_filename, 'w') as def_profile:
             dump(self.current_profile, def_profile)
+
+
+class ProfileLoaderMenu(BaseMenu):
+    """ File List Display for Loading a Profile from SD Card. """
+
+    def __init__(self, profile_control, display, rotary,
+                 button_up = None, button_down = None,
+                 button_left = None, button_right = None, lock = None):
+        self.profile_control = profile_control
+        entries = [['Back', go_back, None]]
+        mountpoint = self.profile_control.sdcard.mountpoint
+
+        for profile in self.profile_control.listProfiles():
+            entries.append([profile,
+                            self.profile_control.readProfile,
+                            '{}/{}'.format(mountpoint, profile)
+                            ])
+
+        super(ProfileLoaderMenu, self).__init__(
+            entries, display, rotary, button_up, button_down,
+            button_left, button_right, lock)
