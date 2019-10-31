@@ -8,7 +8,7 @@ from gc import collect
 from hwspi.hwspi import HSPI
 from uos import ilistdir, mount, umount
 from sdcard import SDCard
-from utime import sleep
+from utime import sleep_ms
 
 from config import DOWN_PUSHBUTTON_PIN, UP_PUSHBUTTON_PIN
 from config import LEFT_PUSHBUTTON_PIN, RIGHT_PUSHBUTTON_PIN
@@ -73,7 +73,7 @@ class Buzzer(PWMDevice):
             buz.duty(BUZZER_VOLUME)
             for octave in range(4, 9):
                 buz.freq(BUZZER_NOTE_CSHARP[octave])
-                sleep(0.2)
+                sleep_ms(200)
 
 
 class Fan(PWMDevice):

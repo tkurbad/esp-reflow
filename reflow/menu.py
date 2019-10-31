@@ -193,5 +193,5 @@ class Menu(BaseMenu):
             callback()
         else:
             callback(params)
-        sleep_ms(40)
+        sleep_ms(50)
         self.draw_item(index)

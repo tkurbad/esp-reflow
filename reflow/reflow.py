@@ -40,10 +40,10 @@ class HeatControl:
         self._reset()
 
     def _reset(self):
+        HeatControl._reflow             = False
         self.heater_top.duty(0)
         self.heater_bottom.duty(0)
         self._reflow_profile_table      = deque((), 5, 1)
-        HeatControl._reflow             = False
         self._soaking_started           = 0
         self._last_setpoint             = 0
         self._current_setpoint          = 0
