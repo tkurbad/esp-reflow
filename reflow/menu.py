@@ -16,36 +16,42 @@ from config import ROTARY_RANGE_BOUNDED
 class BaseMenu(object):
     """ Base Class for On Screen Menus. """
 
-    active = 0          # Currently Active Menu Item
-    last_active = 0     # Last Active Menu Item
     paused = False      # Pause Menu Display
+    was_paused = False  # Was the Menu Display Paused During the Last Cycle
 
-    def __init__(self, menuitems, display, rotary, button_up = None,
+    def __init__(self, items, display, rotary, button_up = None,
                  button_down = None, button_left = None,
                  button_right = None, lock = None):
         """ Initialize Menu Area.
 
             Parameters:
-                menuitems           - List of Menuitems to Display
-                display             - A display.basic.Display Object
-                rotary              - A reflow.device.Rotary Object
-                button_X            - Tuples of 3 Elements:
-                                      (reflow.basedevice.PushButton
-                                       Object, Callback Function,
-                                       Callback Parameters [or None])
+                items           - List of Menuitems to Display
+                display         - A display.basic.Display Object
+                rotary          - A reflow.device.Rotary Object
+                button_X        - Tuples of 3 Elements:
+                                  (reflow.basedevice.PushButton
+                                   Object, Callback Function,
+                                   Callback Parameters [or None])
         """
-        if type(menuitems) != list:
-            raise RuntimeError('parameter menuitems must be of type list')
-        self.menuitems = menuitems
-        self.num_items = len(menuitems)
+        if type(items) != list:
+            raise RuntimeError('parameter items must be of type list')
+        self.items = items
+        self.num_items = len(items)
         self.display = display
         self.rotary = rotary
         # Set Rotary Encoder to Bounded Mode, with Last Menu Item as Max
         # Value
         self.rotary._range_mode = ROTARY_RANGE_BOUNDED
         self.rotary._max_val = self.num_items - 1 if self.num_items > 0 else 0
+        self.button_up = button_up
+        self.button_down = button_down
+        self.button_left = button_left
+        self.button_right = button_right
         self.lock = lock
         self.font_height = MENU_FONT.height()
+        self.active = 0          # Currently Active Menu Item
+        self.last_active = 0     # Last Active Menu Item
+
         self.clear()
         collect()
 
@@ -75,7 +81,7 @@ class BaseMenu(object):
         """ Draw a Single Menu Item at 'index'. Use Locking if Lock Has
             Been Provided.
         """
-        if Menu.paused:
+        if self.__class__.paused:
             return
         if self.lock is None:
             self._draw_item(index)
@@ -86,7 +92,7 @@ class BaseMenu(object):
     def draw_items(self):
         """ Draw All Menu Items, Highlighting the Currently Active One.
         """
-        if Menu.paused:
+        if self.__class__.paused:
             return
         for index in range(0, self.num_items):
             self.draw_item(index)
@@ -96,44 +102,55 @@ class BaseMenu(object):
         """ Overwrite with Specific Implementation. """
         pass
 
-    def loop(self):
+    def loop(self, exit_on_pause = False):
         """ Main Menu Loop. Checks for Rotary Encoder Updates and
             (De-)Activates Menu Items Accordingly.
 
             TODO: Executes Callback Function of Menuitem Upon Encoder
                   Push Button Press.
         """
-        while True and not Menu.paused:
+        while not (exit_on_pause and self.__class__.paused):
+            # Is the Menu Display Paused
+            if self.__class__.paused:
+                continue
+
+            if self.__class__.was_paused:
+                self.__class__.was_paused = False
+                self.clear()
+                self.draw_items()
+
             # Read Rotary Encoder
             rotary_index, button_pressed = self.rotary.value()
             if button_pressed:
-                self.callback_item(Menu.active)
+                self.callback_item(self.active)
                 sleep_ms(50)
                 continue
-            if Menu.active != rotary_index:
+            if self.active != rotary_index:
                 # Rotary Encoder Has Been Turned
                 # Memorize Last Active Menu Item
-                Menu.last_active = Menu.active
+                self.last_active = self.active
                 # Set New Active Menu Item
-                Menu.active = rotary_index
+                self.active = rotary_index
                 if self.lock is not None:
                     with self.lock as l:
                         # Display New Active Menu Item as Active
-                        self._draw_item(Menu.active)
+                        self._draw_item(self.active)
                         # Display Last Active Menu Item as Inactive
-                        self._draw_item(Menu.last_active)
+                        self._draw_item(self.last_active)
                 else:
-                    self._draw_item(Menu.active)
-                    self._draw_item(Menu.last_active)
+                    self._draw_item(self.active)
+                    self._draw_item(self.last_active)
             sleep_ms(40)
 
 
-class Menu(BaseMenu):
+class MainMenu(BaseMenu):
     """ Main Menu Display and Handling Class. """
+    paused = False      # Pause Menu Display
+    was_paused = False  # Was the Menu Display Paused During the Last Cycle
 
     def _draw_item(self, index):
         """ Draw a Single Menu Item with Number 'index'. """
-        if index == Menu.active:
+        if index == self.active:
             # Menu Item Is Currently Active - Set Colors Accordingly and
             # Draw Active Item Background
             self.display.set_color(MENU_ACTIVE_ITEM_COLOR,
@@ -160,7 +177,7 @@ class Menu(BaseMenu):
          params1,
          title2,
          callback2,
-         params2)   = self.menuitems[index]
+         params2)   = self.items[index]
         if callable(use_second):
             title = title2 if use_second() else title1
         else:
@@ -180,7 +197,7 @@ class Menu(BaseMenu):
          params1,
          title2,
          callback2,
-         params2)   = self.menuitems[index]
+         params2)   = self.items[index]
         if callable(use_second):
             callback = callback2 if use_second() else callback1
             params = params2 if use_second() else params1

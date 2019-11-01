@@ -6,6 +6,7 @@ from gc import collect, mem_alloc, mem_free, threshold
 from _thread import allocate_lock, start_new_thread
 
 from machine import reset
+from micropython import alloc_emergency_exception_buf
 from utime import sleep_ms
 
 from config import THERMOCOUPLE_BUSID, THERMOCOUPLE_BAUDRATE
@@ -17,14 +18,16 @@ from thermocouple.thermocouple import Thermocouple
 from reflow.device import ButtonDown, ButtonLeft, ButtonRight, ButtonUp
 from reflow.device import Buzzer, Fan, HeaterBottom, HeaterTop, Light
 from reflow.device import RotaryEncoder, SDCardHandler
-from reflow.menu import Menu
-from reflow.profile import ProfileControl
+from reflow.menu import MainMenu
+from reflow.profile import ProfileControl, ProfileLoaderMenu
 from reflow.reflow import HeatControl
 from wlan_sta import STA
 
 ##
 ## Setup
 ##
+# Buffer Exceptions
+alloc_emergency_exception_buf(100)
 
 # Initialize Display
 tft = Display()
@@ -141,11 +144,7 @@ def buttonThread():
         if button_right.value():
             rotary._button_pressed = True
 
-def profiles():
-    num = profile_control.listProfiles()
-    pro = profile_control.profiles
-    print ('Profile Count:', num)
-    print ('Profiles:', pro)
+    
 
 # Start Reading Heat Values (with Locking - Lock Variable Given During Init)
 start_new_thread(heat_control.heatReadResponse, ())
@@ -159,6 +158,16 @@ start_new_thread(buttonThread, ())
 ##
 ## Main Menu
 ##
+
+# Callback Function for Profile Loader Menu Display
+def profiles():
+    MainMenu.paused = True
+    ProfileLoaderMenu.was_paused = True
+    ProfileLoaderMenu.paused = False
+    profile_loader_menu.loop(exit_on_pause = True)
+    if profile_control.current_profile != current_profile:
+        heat_control.reflow_profile = profile_control.current_profile
+
 
 ## Menu Item Switching Callback Functionss (Have to Return True / False)
 
@@ -194,7 +203,6 @@ start_new_thread(buttonThread, ())
 #
 # Example Dynamic Menu Item
 #  sdcard = [sd_card_mounted, 'Mount SD Card', mount_sd, None, 'Unmount SD Card', umount_sd, None]
-
 menuitems = [
     [False, 'Load Profile from SD', profiles, None, None, None, None],
     [HeatControl.isReflowing, 'Start Reflow Process', heat_control.startReflow, None, 'Stop Reflow Process', heat_control.cancelReflow, None],
@@ -203,8 +211,15 @@ menuitems = [
     [False, 'Restart', reset, None, None, None, None],
 ]
 
-# Set Up Menu
-menu = Menu(menuitems, tft, rotary, lock = reflowLock)
+# Set Up Main Menu
+main_menu = MainMenu(menuitems, tft, rotary, lock = reflowLock)
+
+# Set Up Profile Loader Menu
+profile_loader_menu = ProfileLoaderMenu(profile_control,
+                                        tft,
+                                        rotary,
+                                        lock = reflowLock
+                                        )
 
 
 ##
@@ -212,12 +227,13 @@ menu = Menu(menuitems, tft, rotary, lock = reflowLock)
 ##
 
 # Initial Menu Display
-menu.draw_items()
+main_menu.draw_items()
 
 try:
     """ Handle Menu Input. """
-    menu.loop()
-
+    main_menu.loop()
+except:
+    raise
 finally:
     """ Deinitialize all PWM and SPI Devices.
         !!! Disable Heaters First to Prevent Fires !!!
