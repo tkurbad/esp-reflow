@@ -10,7 +10,7 @@ all:
 	$(MPY_CROSS) reflow/basedevice.py
 	$(MPY_CROSS) reflow/device.py
 	$(MPY_CROSS) reflow/menu.py
-	#$(MPY_CROSS) reflow/profile.py
+	$(MPY_CROSS) reflow/profile.py
 	$(MPY_CROSS) reflow/reflow.py
 	$(MPY_CROSS) thermocouple/thermocouple.py
 
@@ -28,7 +28,7 @@ deploy:
 	$(AMPY) put reflow/__init__.py reflow/__init__.py
 	$(AMPY) put reflow/basedevice.mpy reflow/basedevice.mpy
 	$(AMPY) put reflow/device.mpy reflow/device.mpy
-	$(AMPY) put reflow/menu.mpy reflow/menu.mpy
+	$(AMPY) put reflow/menu.py reflow/menu.py
 	$(AMPY) put reflow/profile.py reflow/profile.py
 	$(AMPY) put reflow/reflow.mpy reflow/reflow.mpy
 	$(AMPY) mkdir --exists-okay thermocouple
