@@ -204,7 +204,6 @@ class Rotary:
         self._pin_dt.irq(handler = None)
         self._pin_push.irq(handler = None)
 
-    @micropython.native
     def _process_rotary_pins(self, pin):
         """ Process the Rotary Input and Calculate Encoder Value. """
         clk_dt_pins = (self._pin_clk.value() << 1) | self._pin_dt.value()
