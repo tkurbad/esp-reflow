@@ -116,6 +116,7 @@ class BaseMenu(object):
 
             if self.__class__.was_paused:
                 self.__class__.was_paused = False
+                self.rotary._max_val = self.num_items - 1 if self.num_items > 0 else 0
                 self.clear()
                 self.draw_items()
 
