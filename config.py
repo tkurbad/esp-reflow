@@ -138,6 +138,8 @@ DISPLAY_PROFILE_LABEL_Y = const(145)        # Reflow Profile Status Label Vertic
 DISPLAY_PROFILE_DELIM_Y = const(147)        # Reflow Profile  Delimiter Line Vertical Coordinate
 DISPLAY_PROFILE_BG_COLOR = COLOR_0          # Reflow Profile Status Bar Background Color
 DISPLAY_PROFILE_FG_COLOR = COLOR_220        # Reflow Profile Status Bar Foreground Color
+DISPLAY_PROFILE_NAME_X  = const(10)         # Reflow Profile Name Horizontal Start Coordinate
+DISPLAY_PROFILE_NAME_Y  = const(157)        # Reflow Profile Name Vertical Coordinate
 #  Heater Status Bar
 DISPLAY_HEATER_FONT     = tt24              # Heater Status Bar Font
 DISPLAY_HEATER_LABEL    = 'Heater Activity %'       # Heater Status Label
@@ -185,6 +187,6 @@ MENU_INACTIVE_BG_COLOR  = COLOR_0_0_240     # Inactive Menu Item Background Colo
 MENU_INACTIVE_ITEM_COLOR = COLOR_255_240_0  # Inactive Menu Item Text Color
 
 # Reflow Profile Handling
-DEFAULT_PROFILE_FILE    = '/def_profile.json'   # Filename of Default Reflow Profile Saved to Flash
+DEFAULT_PROFILE_FILE    = '/current.prf'    # Filename of Default Reflow Profile Saved to Flash
 DEFAULT_PROFILE_EXT     = '.prf'            # Default Filename Extension for Profiles
 DEFAULT_SD_MOUNTPATH    = '/sd'             # Default Path the SD Card is Mounted to
