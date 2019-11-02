@@ -12,9 +12,11 @@ from config import DISPLAY_TOP_BAR_FG_COLOR, DISPLAY_TOP_BAR_BG_COLOR
 from config import DISPLAY_TOP_BAR_HEIGHT, DISPLAY_TOP_BAR_FONT
 from config import DISPLAY_TOP_BAR_TEXT_X, DISPLAY_TOP_BAR_TEXT_Y
 from config import DISPLAY_PROFILE_FG_COLOR, DISPLAY_PROFILE_BG_COLOR
+from config import DISPLAY_PROFILE_HEATING_FG_COLOR, DISPLAY_PROFILE_SOAKING_FG_COLOR
 from config import DISPLAY_PROFILE_LABEL, DISPLAY_PROFILE_LABEL_Y
 from config import DISPLAY_PROFILE_FONT, DISPLAY_PROFILE_DELIM_Y
 from config import DISPLAY_PROFILE_NAME_X, DISPLAY_PROFILE_NAME_Y
+from config import DISPLAY_PROFILE_SETPOINT_X, DISPLAY_PROFILE_SETPOINT_Y
 from config import DISPLAY_HEATER_FG_COLOR, DISPLAY_HEATER_BG_COLOR
 from config import DISPLAY_HEATER_LABEL, DISPLAY_HEATER_LABEL_Y
 from config import DISPLAY_HEATER_TEXT_X, DISPLAY_HEATER_TEXT_Y
@@ -33,10 +35,12 @@ from ili9341 import ILI9341
 from display.icon import AnimatedFanIcon, FanIcon, LightbulbIcon, SDIcon
 from display.icon import DegreeSymbol
 
+from reflow.reflow import HeatControl
 
 # Initialize globals
 HEATER_X                = dict()
 TC_X                    = dict()
+
 
 class Display(ILI9341):
     """ Basic Reflow Oven Display Class. """
@@ -61,6 +65,10 @@ class Display(ILI9341):
         self._last_internal_temperature = 0.0
         self._last_ipaddress = None
         self._last_profile_name = None
+        self._last_soaking_elapsed = - 1
+        self._was_reflowing = False
+        self._was_soaking = False
+        self._profile_fg_color = DISPLAY_PROFILE_HEATING_FG_COLOR
 
     def prepare(self):
         """ Erase Display, Set Up Status Bars, etc. """
@@ -313,3 +321,40 @@ class Display(ILI9341):
             self.chars('{:^25}'.format(profile_name),
                        DISPLAY_PROFILE_NAME_X,
                        DISPLAY_PROFILE_NAME_Y)
+
+        if HeatControl.isReflowing():
+            self._was_reflowing = True
+
+            soaktime = ' /{:3d}s'.format(HeatControl.current_soaktime)
+            soaktime_x = (DISPLAY_WIDTH
+                          - DISPLAY_PROFILE_SETPOINT_X
+                          - DISPLAY_LOW_BAR_FONT.get_width(soaktime))
+
+            if HeatControl.soaking_started:
+                self._was_soaking = True
+                if self._profile_fg_color != DISPLAY_PROFILE_SOAKING_FG_COLOR:
+                    self._profile_fg_color = DISPLAY_PROFILE_SOAKING_FG_COLOR
+
+            setpoint_changed = HeatControl.last_setpoint != HeatControl.current_setpoint
+
+            if (self._was_soaking != HeatControl.soaking_started or
+                setpoint_changed):
+                if setpoint_changed:
+                    self._profile_fg_color = DISPLAY_PROFILE_HEATING_FG_COLOR
+                if self._was_soaking:
+                    self._was_soaking = False
+                self._last_soaking_elapsed = - 1
+
+                self.set_color(self._profile_fg_color,
+                               DISPLAY_PROFILE_BG_COLOR)
+                self.chars("{:4d}'C".format(HeatControl.current_setpoint),
+                                            DISPLAY_PROFILE_SETPOINT_X,
+                                            DISPLAY_PROFILE_SETPOINT_Y)
+
+                self.chars(soaktime, soaktime_x, DISPLAY_PROFILE_SETPOINT_Y)
+
+            if self._last_soaking_elapsed != HeatControl.soaking_elapsed:
+                self._last_soaking_elapsed = HeatControl.soaking_elapsed
+                elapsed = '{:4d}'.format(self._last_soaking_elapsed // 1000)
+                elapsed_x = soaktime_x - DISPLAY_LOW_BAR_FONT.get_width(elapsed)
+                self.chars(elapsed, elapsed_x, DISPLAY_PROFILE_SETPOINT_Y)

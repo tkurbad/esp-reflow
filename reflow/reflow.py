@@ -18,7 +18,12 @@ from reflow.profile import ReflowProfile
 class HeatControl:
     """ Central Heat Reading and Control Class. """
 
-    _reflow = False
+    _reflow             = False
+    current_setpoint    = 0
+    current_soaktime    = 0
+    last_setpoint       = 0
+    soaking_started     = 0
+    soaking_elapsed     = 0
 
     def __init__(self, lock, thermocouples, heater_top, heater_bottom,
                  fan, reflow_profile, buzzer = None, light = None):
@@ -44,10 +49,11 @@ class HeatControl:
         self.heater_top.duty(0)
         self.heater_bottom.duty(0)
         self._reflow_profile_table      = deque((), 5, 1)
-        self._soaking_started           = 0
-        self._last_setpoint             = 0
-        self._current_setpoint          = 0
-        self._current_soaktime          = 0
+        HeatControl.soaking_started     = 0
+        HeatControl.soaking_elapsed     = 0
+        HeatControl.last_setpoint       = 0
+        HeatControl.current_setpoint    = 0
+        HeatControl.current_soaktime    = 0
         self._overshoot_prevention      = 0
         self._current_overshoot_step    = None
         self._overshoot_step_index      = 0
@@ -56,8 +62,8 @@ class HeatControl:
 
     def _readNextSetpoint(self):
         try:
-            (self._current_setpoint,
-             self._current_soaktime,
+            (HeatControl.current_setpoint,
+             HeatControl.current_soaktime,
              self._overshoot_prevention) = self._reflow_profile_table.popleft()
         except IndexError:
             self.shutdown(soft = True)
@@ -65,7 +71,7 @@ class HeatControl:
     def _calculateOvershootPreventionSteps(self):
         self._overshoot_step_index = 0
         overshoot_steps = [
-            (self._current_setpoint - 10 * (self._overshoot_prevention - i + 1),
+            (HeatControl.current_setpoint - 10 * (self._overshoot_prevention - i + 1),
              max(HEATER_TOP_MAX_DUTY - 20 * i, 0),
              max(HEATER_BOTTOM_MAX_DUTY - 10 * i, 0))
              for i in range(1, self._overshoot_prevention + 1)]
@@ -127,19 +133,19 @@ class HeatControl:
 
             if HeatControl._reflow:
                 try:
-                    if self._current_setpoint == 0:
-                        if self._last_setpoint > 0:
+                    if HeatControl.current_setpoint == 0:
+                        if HeatControl.last_setpoint > 0:
                             # Setpoint of 0 at end of reflow cycle -> Shut off
                             self.shutdown(soft = True)
                         else:
                             print ('Reflow process started...')
-                            self._last_setpoint = self._current_setpoint
+                            HeatControl.last_setpoint = HeatControl.current_setpoint
                             # Try to read first target values from profile
                             self._readNextSetpoint()
                             print ('Temperature setpoint:',
-                                   self._current_setpoint,
+                                   HeatControl.current_setpoint,
                                    'Soak time:',
-                                   self._current_soaktime)
+                                   HeatControl.current_soaktime)
 
                             # Calculate Overshoot Prevention
                             overshoot_steps = self._calculateOvershootPreventionSteps()
@@ -148,26 +154,28 @@ class HeatControl:
                             if self._overshoot_step_index < len(overshoot_steps):
                                 self._current_overshoot_step = overshoot_steps[self._overshoot_step_index]
 
-                    if self._current_setpoint != self._last_setpoint:
-                        if (self._soaking_started > 0
-                            and ticks_diff(now, self._soaking_started) >= self._current_soaktime * 1000):
-                            print ('Soaking ended...')
-                            self._soaking_started = 0
-                            self._last_setpoint = self._current_setpoint
-                            # Try to read next set of target values from profile
-                            self._readNextSetpoint()
-                            print ('Temperature setpoint:',
-                                   self._current_setpoint,
-                                   'Soak time:',
-                                   self._current_soaktime)
+                    if HeatControl.current_setpoint != HeatControl.last_setpoint:
+                        if HeatControl.soaking_started > 0:
+                            HeatControl.soaking_elapsed = ticks_diff(now, HeatControl.soaking_started)
+                            if HeatControl.soaking_elapsed >= HeatControl.current_soaktime * 1000:
+                                print ('Soaking ended...')
+                                HeatControl.soaking_started = 0
+                                HeatControl.soaking_elapsed = 0
+                                HeatControl.last_setpoint = HeatControl.current_setpoint
+                                # Try to read next set of target values from profile
+                                self._readNextSetpoint()
+                                print ('Temperature setpoint:',
+                                       HeatControl.current_setpoint,
+                                       'Soak time:',
+                                       HeatControl.current_soaktime)
 
-                            # Calculate Overshoot Prevention
-                            overshoot_steps = self._calculateOvershootPreventionSteps()
+                                # Calculate Overshoot Prevention
+                                overshoot_steps = self._calculateOvershootPreventionSteps()
 
-                            if self._overshoot_step_index < len(overshoot_steps):
-                                self._current_overshoot_step = overshoot_steps[self._overshoot_step_index]
+                                if self._overshoot_step_index < len(overshoot_steps):
+                                    self._current_overshoot_step = overshoot_steps[self._overshoot_step_index]
 
-                    if self._current_setpoint > pcb_temp:
+                    if HeatControl.current_setpoint > pcb_temp:
                         # Wait one cycle before turning on bottom heater
                         # to avoid a surge
                         if self._heating_top and not self._heating_bottom:
@@ -189,9 +197,9 @@ class HeatControl:
                             if self._overshoot_step_index < len(overshoot_steps):
                                 self._current_overshoot_step = overshoot_steps[self._overshoot_step_index]
 
-                    if self._heating_top and (self._current_setpoint <= pcb_temp):
-                        if not self._soaking_started:
-                            self._soaking_started = now
+                    if self._heating_top and (HeatControl.current_setpoint <= pcb_temp):
+                        if not HeatControl.soaking_started:
+                            HeatControl.soaking_started = now
                             print ('Soaking started...')
                         self.heater_top.duty(0)
                         self.heater_bottom.duty(0)
@@ -206,7 +214,7 @@ class HeatControl:
 
             else:
                 # In case of a requested shutoff, i.e. by menu command
-                if self._heating_top or self._heating_bottom or self._soaking_started:
+                if self._heating_top or self._heating_bottom or HeatControl.soaking_started:
                     self.shutdown()
 
             collect()
