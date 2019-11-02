@@ -14,6 +14,7 @@ from config import DISPLAY_TOP_BAR_TEXT_X, DISPLAY_TOP_BAR_TEXT_Y
 from config import DISPLAY_PROFILE_FG_COLOR, DISPLAY_PROFILE_BG_COLOR
 from config import DISPLAY_PROFILE_LABEL, DISPLAY_PROFILE_LABEL_Y
 from config import DISPLAY_PROFILE_FONT, DISPLAY_PROFILE_DELIM_Y
+from config import DISPLAY_PROFILE_NAME_X, DISPLAY_PROFILE_NAME_Y
 from config import DISPLAY_HEATER_FG_COLOR, DISPLAY_HEATER_BG_COLOR
 from config import DISPLAY_HEATER_LABEL, DISPLAY_HEATER_LABEL_Y
 from config import DISPLAY_HEATER_TEXT_X, DISPLAY_HEATER_TEXT_Y
@@ -58,6 +59,8 @@ class Display(ILI9341):
         self._last_mounted = None
         self._last_temperatures = dict()
         self._last_internal_temperature = 0.0
+        self._last_ipaddress = None
+        self._last_profile_name = None
 
     def prepare(self):
         """ Erase Display, Set Up Status Bars, etc. """
@@ -200,12 +203,15 @@ class Display(ILI9341):
         """ Display Current IP Address in Top Status Bar. """
         if not self.prepared:
             return
+        if ipaddress == self._last_ipaddress:
+            return
         self.set_color(DISPLAY_TOP_BAR_FG_COLOR,
                        DISPLAY_TOP_BAR_BG_COLOR)
         self.set_font(DISPLAY_TOP_BAR_FONT)
         self.chars('%s   ' % ipaddress,
                    self.ipaddress_x,
                    DISPLAY_TOP_BAR_TEXT_Y)
+        self.last_ipaddress = ipaddress
 
     def show_light(self, light):
         if light is None:
@@ -288,3 +294,22 @@ class Display(ILI9341):
                        DISPLAY_LOW_BAR_TEXT_Y[THERMOCOUPLE_NAME4])
 
         self._last_temperatures = temperatures.copy()
+
+    def show_profile(self, reflow_profile):
+        """ Display Current Profile Name, Parameters and Progress. """
+        if not self.prepared:
+            return
+        if reflow_profile is None:
+            profile_name = '- - -'
+        else:
+            profile_name = reflow_profile.name
+
+        self.set_color(DISPLAY_PROFILE_FG_COLOR,
+                       DISPLAY_PROFILE_BG_COLOR)
+        self.set_font(DISPLAY_LOW_BAR_FONT)
+
+        if self._last_profile_name != profile_name:
+            self._last_profile_name = profile_name
+            self.chars('{:^25}'.format(profile_name),
+                       DISPLAY_PROFILE_NAME_X,
+                       DISPLAY_PROFILE_NAME_Y)
