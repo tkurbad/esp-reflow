@@ -90,7 +90,8 @@ sdcard.mount()
 profile_control = ProfileControl(sdcard)
 
 # Try to Get Current Profile
-current_profile = profile_control.getDefaultProfile()
+profile_control.getDefaultProfile()
+current_profile = profile_control.current_profile
 
 # Heat Control Object
 heat_control = HeatControl(lock = reflowLock,
@@ -118,6 +119,7 @@ def statusDisplayThread(lock):
         with lock as l:
             tft.show_temperatures(thermocouples.temp)
             tft.show_heaters(heat_control.heater_duty)
+            tft.show_profile(heat_control.reflow_profile)
             if ipaddress != STA().ipaddress:
                 ipaddress = STA().ipaddress
                 tft.show_ipaddress(ipaddress)
@@ -159,19 +161,20 @@ start_new_thread(buttonThread, ())
 ## Main Menu
 ##
 
-# Callback Function for Profile Loader Menu Display
+## Callback Functions
+# Profile Loader Menu Display
 def profiles():
     MainMenu.paused = True
     ProfileLoaderMenu.was_paused = True
     ProfileLoaderMenu.paused = False
     profile_loader_menu.loop(exit_on_pause = True)
+    if profile_control.err is not None:
+        pass
     if profile_control.current_profile != current_profile:
         heat_control.reflow_profile = profile_control.current_profile
 
 
-## Menu Item Switching Callback Functionss (Have to Return True / False)
-
-# Define Menu Items
+# Define Main Menu Items
 #  Format:
 #   [show_title2, title1, callback1, arguments1, title2, callback2, arguments2]
 #
@@ -198,12 +201,13 @@ def profiles():
 #   - arguments2 : Tuple with Arguments to callback2 (or None for no Arguments).
 #
 #
-# Example Static Menu Item
+# Example Static Main Menu Item
 #  calibrate = [False, 'Calibrate', calibrate, ('x', 1), None, None, None]
 #
-# Example Dynamic Menu Item
+# Example Dynamic Main Menu Item
 #  sdcard = [sd_card_mounted, 'Mount SD Card', mount_sd, None, 'Unmount SD Card', umount_sd, None]
-menuitems = [
+
+main_menuitems = [
     [False, 'Load Profile from SD', profiles, None, None, None, None],
     [HeatControl.isReflowing, 'Start Reflow Process', heat_control.startReflow, None, 'Stop Reflow Process', heat_control.cancelReflow, None],
     [light.pin.value, 'Turn on Light', light.pin.on, None, 'Turn off Light', light.pin.off, None],
@@ -212,7 +216,9 @@ menuitems = [
 ]
 
 # Set Up Main Menu
-main_menu = MainMenu(menuitems, tft, rotary, lock = reflowLock)
+main_menu = MainMenu(main_menuitems, tft, rotary, lock = reflowLock)
+# Trigger Initial Display of Menu Items
+MainMenu.was_paused = True
 
 # Set Up Profile Loader Menu
 profile_loader_menu = ProfileLoaderMenu(profile_control,
@@ -225,10 +231,6 @@ profile_loader_menu = ProfileLoaderMenu(profile_control,
 ##
 ## Main Code
 ##
-
-# Initial Menu Display
-main_menu.draw_items()
-
 try:
     """ Handle Menu Input. """
     main_menu.loop()
