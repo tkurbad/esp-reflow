@@ -4,14 +4,14 @@
 
 from esp import osdebug
 from _thread import start_new_thread
-#import webrepl
+import webrepl
 
 from time import sleep
 from wlan_sta import STA
 
 osdebug(None)
 
-#webrepl.start()
+webrepl.start()
 
 ssids = [
     ('IWM', 'Be wary then; best safety lies in fear'),
@@ -21,13 +21,10 @@ ssids = [
 wifi = STA()
 
 def connectWifi():
-    while True:
-        if wifi.isconnected():
-            return
+    while not wifi.isconnected():
         for (ssid, passphrase) in ssids:
             if wifi.connect(ssid, passphrase):
                 return
         sleep(10)
 
 start_new_thread(connectWifi, ())
-
