@@ -1,5 +1,36 @@
+# Makefile for ESP32 Micropython Driven SMD Reflow Oven Project
+#
+# MIT license; Copyright (c) 2019 Torsten Kurbad
+
+# Install 'ampy' using
+#
+#  pip install adafruit-ampy
+#
+# Add 'ampy' to Path and Set Full Commandline Options Here.
 AMPY=ampy -p /dev/ttyUSB0
+
+# Put Full Commandline for 'mpy-cross' Here.
+# Note: 'mpy-cross' is Part of the Official Micropython Distribution
+#       [https://github.com/micropython/micropython]
+#       For this Project, the Latest Forked Version of Micropython at
+#       https://github.com/tkurbad/micropython/tree/esp32-reflow
+#       is Mandatory.
 MPY_CROSS=../micropython/mpy-cross/mpy-cross -march=xtensawin -X heapsize=111168 -O4
+
+# If You Connect to the ESP32 via USB Serial, You Build and Deploy the
+# Project to the Device by Issuing
+#
+#  make && make erase && make deploy
+#
+# If You Want to Erase the Currently Saved Reflow Profile from the
+# Device, too, Type
+#
+#  make mrproper
+#
+# Instead of
+#
+#  make erase
+#
 
 all:
 	$(MPY_CROSS) config.py
@@ -39,6 +70,24 @@ deploy:
 	$(AMPY) mkdir --exists-okay thermocouple
 	$(AMPY) put thermocouple/__init__.py thermocouple/__init__.py
 	$(AMPY) put thermocouple/thermocouple.mpy thermocouple/thermocouple.mpy
+
+erase:
+	-$(AMPY) rm boot.py
+	-$(AMPY) rm main.py
+	-$(AMPY) rm config.py
+	-$(AMPY) rm config.mpy
+	-$(AMPY) rm private.py
+	-$(AMPY) rm private.mpy
+	-$(AMPY) rm webrepl_cfg.py
+	-$(AMPY) rm webrepl_cfg.mpy
+	-$(AMPY) rm wlan_sta.py
+	-$(AMPY) rm wlan_sta.mpy
+	-$(AMPY) rmdir display
+	-$(AMPY) rmdir reflow
+	-$(AMPY) rmdir thermocouple
+
+mrproper: erase
+	-$(AMPY) rm current.prf
 
 reset:
 	$(AMPY) reset --hard
