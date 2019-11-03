@@ -330,15 +330,15 @@ class Display(ILI9341):
                           - DISPLAY_PROFILE_SETPOINT_X
                           - DISPLAY_LOW_BAR_FONT.get_width(soaktime))
 
-            if HeatControl.soaking_started:
+            if HeatControl.soaking_started > 0:
                 self._was_soaking = True
                 if self._profile_fg_color != DISPLAY_PROFILE_SOAKING_FG_COLOR:
                     self._profile_fg_color = DISPLAY_PROFILE_SOAKING_FG_COLOR
 
             setpoint_changed = HeatControl.last_setpoint != HeatControl.current_setpoint
 
-            if (self._was_soaking != HeatControl.soaking_started or
-                setpoint_changed):
+            if ((self._was_soaking and HeatControl.soaking_started == 0)
+                or setpoint_changed):
                 if setpoint_changed:
                     self._profile_fg_color = DISPLAY_PROFILE_HEATING_FG_COLOR
                 if self._was_soaking:
@@ -358,3 +358,17 @@ class Display(ILI9341):
                 elapsed = '{:4d}'.format(self._last_soaking_elapsed // 1000)
                 elapsed_x = soaktime_x - DISPLAY_LOW_BAR_FONT.get_width(elapsed)
                 self.chars(elapsed, elapsed_x, DISPLAY_PROFILE_SETPOINT_Y)
+
+        elif self._was_reflowing:
+            self._was_reflowing = False
+            self.set_color(DISPLAY_PROFILE_HEATING_FG_COLOR,
+                           DISPLAY_PROFILE_BG_COLOR)
+            self.fill_rectangle(0,
+                                DISPLAY_PROFILE_SETPOINT_Y,
+                                DISPLAY_WIDTH,
+                                DISPLAY_LOW_BAR_FONT.height(),
+                                color = DISPLAY_PROFILE_BG_COLOR
+                                )
+            self.chars('{:^25}'.format('Open Door!'),
+                       DISPLAY_PROFILE_SETPOINT_X,
+                       DISPLAY_PROFILE_SETPOINT_Y)
