@@ -6,6 +6,7 @@ from time import sleep
 from network import STA_IF, WLAN
 
 class STA:
+    """ WiFi Station. """
     _ipaddress = '0.0.0.0'
     _ssid = ''
     sta = None

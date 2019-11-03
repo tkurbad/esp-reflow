@@ -11,21 +11,26 @@ from wlan_sta import STA
 
 osdebug(None)
 
+# Activate WebREPL.
 webrepl.start()
 
 try:
+    # Import Configured SSIDs.
     from private import ssids
 except ImportError:
     ssids = []
 
 wifi = STA()
 
+
 def connectWifi():
+    """ WiFi Connection Method. """
     while not wifi.isconnected():
         for (ssid, passphrase) in ssids:
             if wifi.connect(ssid, passphrase):
                 return
         sleep(10)
 
+# Connect to the WiFi Network if One or More SSIDs Have Been Configured.
 if ssids:
     start_new_thread(connectWifi, ())

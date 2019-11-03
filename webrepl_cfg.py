@@ -3,6 +3,7 @@
 # MIT license; Copyright (c) 2019 Torsten Kurbad
 
 try:
+    # Import WebREPL Password if Available
     from private import PASS
 except ImportError:
     pass
