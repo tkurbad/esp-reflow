@@ -13,10 +13,10 @@ from hwspi.constants import HSPI, VSPI
 # Generic
 COLOR_0                 = const(0)          # color565(0, 0, 0)
 COLOR_0_0_240           = const(30)         # color565(0, 0, 240)
-COLOR_0_255             = const(2016)       # color565(0, 255, 0)
+COLOR_0_255_0           = const(2016)       # color565(0, 255, 0)
 COLOR_200               = const(52825)      # color565(200, 200, 200)
 COLOR_220               = const(57083)      # color565(220, 220, 220)
-COLOR_255               = const(63488)      # color565(255, 0, 0)
+COLOR_255_0_0           = const(63488)      # color565(255, 0, 0)
 COLOR_255_240_0         = const(65408)      # color565(255, 240, 0)
 
 # Thermocouple Settings
@@ -59,6 +59,8 @@ DISPLAY_TOP_BAR_FG_COLOR = COLOR_0          # Top Status Bar Foreground Color
 #  Bottom Status Bars (Heater Activity, Thermocouple Readings)
 DISPLAY_LOW_BAR_BG_COLOR = COLOR_0          # Lower Status Bars Background Color
 DISPLAY_LOW_BAR_FG_COLOR = COLOR_200        # Lower Status Bars Foreground Color
+#  Error Messages
+DISPLAY_ERROR_FG_COLOR  = COLOR_255_0_0     # Foregropund Color for (Error) Messages
 #  Delimiters Between Bottom Status Bars
 DISPLAY_DELIM_COLOR     = COLOR_200         # Horizontal Delimiter Line Color
 #  Bottom Status Bar Label Settings ('Heater Activity %', 'Thermocouple Celsius', ...)
@@ -140,8 +142,8 @@ DISPLAY_PROFILE_LABEL_Y = const(145)        # Reflow Profile Status Label Vertic
 DISPLAY_PROFILE_DELIM_Y = const(147)        # Reflow Profile  Delimiter Line Vertical Coordinate
 DISPLAY_PROFILE_BG_COLOR = COLOR_0          # Reflow Profile Status Bar Background Color
 DISPLAY_PROFILE_FG_COLOR = COLOR_220        # Reflow Profile Status Bar Foreground Color
-DISPLAY_PROFILE_HEATING_FG_COLOR = COLOR_255    # Reflow Profile Setpoint Color While Heating
-DISPLAY_PROFILE_SOAKING_FG_COLOR = COLOR_0_255  # Reflow Profile Setpoint Color While Soaking
+DISPLAY_PROFILE_HEATING_FG_COLOR = COLOR_255_0_0    # Reflow Profile Setpoint Color While Heating
+DISPLAY_PROFILE_SOAKING_FG_COLOR = COLOR_0_255_0    # Reflow Profile Setpoint Color While Soaking
 DISPLAY_PROFILE_NAME_X  = const(10)         # Reflow Profile Name Horizontal Start Coordinate
 DISPLAY_PROFILE_NAME_Y  = const(157)        # Reflow Profile Name Vertical Coordinate
 DISPLAY_PROFILE_SETPOINT_X = const(10)      # Reflow Profile Setpoint Horizontal Start Coordinate
