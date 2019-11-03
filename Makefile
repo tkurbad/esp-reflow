@@ -3,6 +3,7 @@ MPY_CROSS=../micropython/mpy-cross/mpy-cross -march=xtensawin -X heapsize=111168
 
 all:
 	$(MPY_CROSS) config.py
+	-$(MPY_CROSS) private.py
 	$(MPY_CROSS) webrepl_cfg.py
 	$(MPY_CROSS) wlan_sta.py
 	$(MPY_CROSS) display/basic.py
@@ -19,9 +20,11 @@ deploy:
 	$(AMPY) put boot.py boot.py
 	$(AMPY) put main.py main.py
 	$(AMPY) put config.mpy config.mpy
+	-$(AMPY) put private.mpy
 	$(AMPY) put webrepl_cfg.mpy webrepl_cfg.mpy
 	$(AMPY) put wlan_sta.mpy wlan_sta.mpy
-	$(AMPY) mkdir --exists-okay display
+	-$(AMPY) mkdir --exists-okay display
+	-$(AMPY) mkdir --exists-okay display
 	$(AMPY) put display/__init__.py display/__init__.py
 	$(AMPY) put display/basic.mpy display/basic.mpy
 	$(AMPY) put display/icon.mpy display/icon.mpy

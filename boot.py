@@ -13,10 +13,10 @@ osdebug(None)
 
 webrepl.start()
 
-ssids = [
-    ('IWM', 'Be wary then; best safety lies in fear'),
-    ('TORSTI-WLAN', 'To improve is to change;')
-]
+try:
+    from private import ssids
+except ImportError:
+    ssids = []
 
 wifi = STA()
 
@@ -27,4 +27,5 @@ def connectWifi():
                 return
         sleep(10)
 
-start_new_thread(connectWifi, ())
+if ssids:
+    start_new_thread(connectWifi, ())
