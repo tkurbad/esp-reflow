@@ -12,6 +12,7 @@ from config import HEATER_BOTTOM_MAX_DUTY, HEATER_TOP_MAX_DUTY
 from config import HEATER_NAME_BOTTOM, HEATER_NAME_TOP
 from config import THERMOCOUPLE_NAME3 as PCB_THERMOCOUPLE
 
+from reflow.error import ReflowError
 from reflow.profile import ReflowProfile
 
 
@@ -77,8 +78,11 @@ class HeatControl:
              for i in range(1, self._overshoot_prevention + 1)]
         return overshoot_steps
 
-    def shutdown(self, soft = False):
+    def shutdown(self, soft = False, error = None):
         self._reset()
+        if error is not None:
+            ReflowError.setError(error)
+            return
         if self.buzzer is not None:
             self.buzzer.jingle()
         if soft:
@@ -218,11 +222,15 @@ class HeatControl:
                     self.shutdown()
 
             collect()
-            sleep_ms(400)
+            sleep_ms(200)
 
     def buildReflowProfileTable(self, reflow_profile = None):
         if reflow_profile is None:
-            reflow_profile = self.reflow_profile or ReflowProfile()
+            reflow_profile = self.reflow_profile
+
+        if reflow_profile is None:
+            self.shutdown(error = 'No Reflow Profile!')
+            return
 
         reflow_profile_table = deque((), len(reflow_profile))
 
@@ -234,6 +242,8 @@ class HeatControl:
 
     def startReflow(self):
         self.buildReflowProfileTable()
+        if self.reflow_profile is None:
+            return
         if self.light is not None:
             self.light.pin.on()
         HeatControl._reflow = True
