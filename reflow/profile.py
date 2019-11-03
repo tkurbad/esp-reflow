@@ -14,6 +14,7 @@ from config import MENU_FONT, MENU_ITEM_OFFSET, MENU_ITEM_SPACING_Y
 from config import MENU_ACTIVE_ITEM_COLOR, MENU_ACTIVE_BG_COLOR
 from config import MENU_INACTIVE_ITEM_COLOR, MENU_INACTIVE_BG_COLOR
 
+from reflow.error import ReflowError
 from reflow.menu import BaseMenu, MainMenu
 
 
@@ -69,7 +70,6 @@ class ProfileControl:
         self.profiles           = []
         self.current_profile    = current_profile
         self.buf                = bytearray(250)
-        self._err                = None
 
     def listProfiles(self, extension = None):
         if extension is None:
@@ -80,7 +80,8 @@ class ProfileControl:
             return len(self.profiles)
         except OSError as e:
             if 'sd card not mounted' in '{}'.format(e.args[0].lower()):
-                self._err = e.args[0]
+                ReflowError.setError('No SD Card', e)
+                print(e)
                 self.profiles = []
             else:
                 raise (e)
@@ -103,7 +104,8 @@ class ProfileControl:
             try:
                 temp_profile.append_entry(profile_line)
             except ValueError as e:
-                self._err = e.args[0]
+                ReflowError.setError('Wrong Profile Format', e)
+                print(e)
                 self.current_profile = None
                 return
 
@@ -119,7 +121,7 @@ class ProfileControl:
             stat(default_filename)
         except OSError as e:
             if e.args[0] == 2:
-                self._err = 'Default profile not found'
+                ReflowError.setError('No Default Profile', e)
                 return None
             else:
                 raise(e)
@@ -136,12 +138,6 @@ class ProfileControl:
             def_profile.write('{}\n'.format(self.current_profile.name))
             for (sp, st, op) in self.current_profile.entries:
                 def_profile.write('{},{},{}\n'.format(sp, st, op))
-
-    @property
-    def err(self):
-        err = self._err
-        self._err = None
-        return err
 
 
 class ProfileLoaderMenu(BaseMenu):
