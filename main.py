@@ -6,7 +6,7 @@ from gc import collect, mem_alloc, mem_free, threshold
 from _thread import allocate_lock, start_new_thread
 
 from machine import reset
-from micropython import alloc_emergency_exception_buf
+from micropython import alloc_emergency_exception_buf, mem_info
 from utime import sleep_ms
 
 from config import THERMOCOUPLE_BUSID, THERMOCOUPLE_BAUDRATE
@@ -18,6 +18,7 @@ from thermocouple.thermocouple import Thermocouple
 from reflow.device import ButtonDown, ButtonLeft, ButtonRight, ButtonUp
 from reflow.device import Buzzer, Fan, HeaterBottom, HeaterTop, Light
 from reflow.device import RotaryEncoder, SDCardHandler
+from reflow.error import ReflowError
 from reflow.menu import MainMenu
 from reflow.profile import ProfileControl, ProfileLoaderMenu
 from reflow.reflow import HeatControl
@@ -120,13 +121,17 @@ def statusDisplayThread(lock):
             tft.show_temperatures(thermocouples.temp)
             tft.show_heaters(heat_control.heater_duty)
             tft.show_profile(heat_control.reflow_profile)
+            error_message = ReflowError.getError()[0]
+            if error_message is not None:
+                tft.show_error(error_message)
             if ipaddress != STA().ipaddress:
                 ipaddress = STA().ipaddress
                 tft.show_ipaddress(ipaddress)
             tft.show_fan(fan.duty())
             tft.show_light(light.pin.value())
             tft.show_sdcard(sdcard.is_mounted())
-        sleep_ms(1000)
+        sleep_ms(100)
+
 
 def buttonThread():
     # For now, just duplicate/emulate the rotary encoder
@@ -155,7 +160,7 @@ start_new_thread(heat_control.heatReadResponse, ())
 start_new_thread(statusDisplayThread, (reflowLock, ))
 
 # Start Reading Button Presses (without Locking)
-start_new_thread(buttonThread, ())
+#start_new_thread(buttonThread, ())
 
 ##
 ## Main Menu
@@ -168,8 +173,9 @@ def profiles():
     ProfileLoaderMenu.was_paused = True
     ProfileLoaderMenu.paused = False
     profile_loader_menu.loop(exit_on_pause = True)
-    if profile_control.err is not None:
-        pass
+    error_message = ReflowError.getError()[0]
+    if error_message is not None:
+        tft.show_error(error_message)
     if profile_control.current_profile != current_profile:
         heat_control.reflow_profile = profile_control.current_profile
 
@@ -227,6 +233,9 @@ profile_loader_menu = ProfileLoaderMenu(profile_control,
                                         lock = reflowLock
                                         )
 
+
+# Print Memory Info
+print(mem_info())
 
 ##
 ## Main Code
