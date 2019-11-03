@@ -4,7 +4,7 @@
 
 from config import DISPLAY_BAUDRATE, DISPLAY_BUSID, DISPLAY_CS_PIN, DISPLAY_DC_PIN
 from config import DISPLAY_WIDTH
-from config import DISPLAY_DELIM_COLOR
+from config import DISPLAY_DELIM_COLOR, DISPLAY_ERROR_FG_COLOR
 from config import DISPLAY_LABEL_FONT, DISPLAY_LABEL_X
 from config import DISPLAY_LABEL_FG_COLOR, DISPLAY_LABEL_BG_COLOR
 from config import DISPLAY_TOP_BAR_HEIGHT, DISPLAY_TOP_BAR_Y
@@ -67,8 +67,6 @@ class Display(ILI9341):
         self._last_profile_name = None
         self._last_soaking_elapsed = - 1
         self._was_reflowing = False
-        self._was_soaking = False
-        self._profile_fg_color = DISPLAY_PROFILE_HEATING_FG_COLOR
 
     def prepare(self):
         """ Erase Display, Set Up Status Bars, etc. """
@@ -303,6 +301,24 @@ class Display(ILI9341):
 
         self._last_temperatures = temperatures.copy()
 
+    def show_error(self, message):
+        """ Display an (Error) Message in the Second Line of the Profile
+            Status.
+        """
+        if message is None:
+            return
+        self.set_color(DISPLAY_ERROR_FG_COLOR,
+                       DISPLAY_PROFILE_BG_COLOR)
+        self.fill_rectangle(0,
+                            DISPLAY_PROFILE_SETPOINT_Y,
+                            DISPLAY_WIDTH,
+                            DISPLAY_LOW_BAR_FONT.height(),
+                            color = DISPLAY_PROFILE_BG_COLOR
+                            )
+        self.chars('{:^25}'.format(message),
+                   DISPLAY_PROFILE_SETPOINT_X,
+                   DISPLAY_PROFILE_SETPOINT_Y)
+
     def show_profile(self, reflow_profile):
         """ Display Current Profile Name, Parameters and Progress. """
         if not self.prepared:
@@ -323,30 +339,33 @@ class Display(ILI9341):
                        DISPLAY_PROFILE_NAME_Y)
 
         if HeatControl.isReflowing():
+            if not self._was_reflowing:
+                self.fill_rectangle(0,
+                    DISPLAY_PROFILE_SETPOINT_Y,
+                    DISPLAY_WIDTH,
+                    DISPLAY_LOW_BAR_FONT.height(),
+                    color = DISPLAY_PROFILE_BG_COLOR
+                    )
             self._was_reflowing = True
+            soaking = HeatControl.soaking_started > 0
+            setpoint_changed = HeatControl.last_setpoint != HeatControl.current_setpoint
 
             soaktime = ' /{:3d}s'.format(HeatControl.current_soaktime)
             soaktime_x = (DISPLAY_WIDTH
                           - DISPLAY_PROFILE_SETPOINT_X
                           - DISPLAY_LOW_BAR_FONT.get_width(soaktime))
 
-            if HeatControl.soaking_started > 0:
-                self._was_soaking = True
-                if self._profile_fg_color != DISPLAY_PROFILE_SOAKING_FG_COLOR:
-                    self._profile_fg_color = DISPLAY_PROFILE_SOAKING_FG_COLOR
+            self.set_color(DISPLAY_PROFILE_HEATING_FG_COLOR,
+                           DISPLAY_PROFILE_BG_COLOR)
 
-            setpoint_changed = HeatControl.last_setpoint != HeatControl.current_setpoint
-
-            if ((self._was_soaking and HeatControl.soaking_started == 0)
-                or setpoint_changed):
-                if setpoint_changed:
-                    self._profile_fg_color = DISPLAY_PROFILE_HEATING_FG_COLOR
-                if self._was_soaking:
-                    self._was_soaking = False
-                self._last_soaking_elapsed = - 1
-
-                self.set_color(self._profile_fg_color,
+            if soaking:
+                self.set_color(DISPLAY_PROFILE_SOAKING_FG_COLOR,
                                DISPLAY_PROFILE_BG_COLOR)
+
+            if (soaking or setpoint_changed):
+                if setpoint_changed:
+                    self._last_soaking_elapsed = - 1
+
                 self.chars("{:4d}'C".format(HeatControl.current_setpoint),
                                             DISPLAY_PROFILE_SETPOINT_X,
                                             DISPLAY_PROFILE_SETPOINT_Y)
@@ -361,14 +380,4 @@ class Display(ILI9341):
 
         elif self._was_reflowing:
             self._was_reflowing = False
-            self.set_color(DISPLAY_PROFILE_HEATING_FG_COLOR,
-                           DISPLAY_PROFILE_BG_COLOR)
-            self.fill_rectangle(0,
-                                DISPLAY_PROFILE_SETPOINT_Y,
-                                DISPLAY_WIDTH,
-                                DISPLAY_LOW_BAR_FONT.height(),
-                                color = DISPLAY_PROFILE_BG_COLOR
-                                )
-            self.chars('{:^25}'.format('Open Door!'),
-                       DISPLAY_PROFILE_SETPOINT_X,
-                       DISPLAY_PROFILE_SETPOINT_Y)
+            self.show_error('Open Door!')
