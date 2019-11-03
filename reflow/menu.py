@@ -141,7 +141,7 @@ class BaseMenu(object):
                 else:
                     self._draw_item(self.active)
                     self._draw_item(self.last_active)
-            sleep_ms(40)
+            sleep_ms(50)
 
 
 class MainMenu(BaseMenu):
