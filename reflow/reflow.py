@@ -52,7 +52,7 @@ class HeatControl:
         HeatControl._reflow             = False
         self.heater_top.duty(0)     # Safety First: Disable Heaters
         self.heater_bottom.duty(0)  #               Manually
-        self._reflow_profile_table      = deque((), 5, 1)   # Filled Later
+        self._reflow_profile_table      = deque((), 0, 1)   # Filled Later
         HeatControl.soaking_started     = 0
         HeatControl.soaking_elapsed     = 0
         HeatControl.last_setpoint       = 0
