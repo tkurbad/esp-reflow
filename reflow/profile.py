@@ -5,7 +5,7 @@
 
 from gc import collect
 
-from uos import ilistdir, stat
+from uos import ilistdir, remove, stat
 from utime import sleep_ms
 
 from config import DEFAULT_PROFILE_FILE, DEFAULT_PROFILE_EXT, DEFAULT_SD_MOUNTPATH
@@ -20,9 +20,11 @@ from reflow.menu import BaseMenu, MainMenu
 
 class ReflowProfile():
     """ Class for Holding Data of a Single Reflow Profile. """
-    def __init__(self, name = None, entries = []):
+    def __init__(self, name = None, entries = None):
         self._name      = name
-        self._entries   = entries
+        self._entries   = list()
+        if entries is not None:
+            self._entries   = entries
         self.line_num   = 0
 
     @property
@@ -69,11 +71,11 @@ class ReflowProfile():
             raise ValueError('Non numeric value in profile line {0:d}'.format(self.line_num))
 
         self.line_num += 1      # For Possible Error Messages Upon Next Append
-        self.entries.append(intline)
+        self._entries.append(intline)
 
     def __len__(self):
         """ Return Length of Profile, i.e. Number of Entries. """
-        return len(self.entries)
+        return len(self._entries)
 
 
 class ProfileControl:
@@ -104,7 +106,8 @@ class ProfileControl:
             return len(self.profiles)
         except OSError as e:
             # Something Went Wrong.
-            if 'sd card not mounted' in '{}'.format(e.args[0].lower()):
+            if (type(e.args[0]) == str and
+                'sd card not mounted' in '{}'.format(e.args[0].lower())):
                 # No SD Card Has Been Mounted. Display Error and Continue.
                 ReflowError.setError('No SD Card', e)
                 print(e)
@@ -128,13 +131,14 @@ class ProfileControl:
         """
         profile_len = 0
         with open(profile_path) as profile:
-            # Read the Profile File Contents into 'self.buf'.
+            # Read the Profile File Contents into a Buffer.
             profile_len = profile.readinto(self.buf)
             # Split the Relevant Portion of the Buffer into Separate Lines.
             profile_lines = self.buf[:profile_len].decode().splitlines()
 
         # Create a New Profile Object.
         temp_profile = ReflowProfile()
+
         # Set Profile Name.
         temp_profile.name = profile_lines[0]
 
@@ -150,6 +154,7 @@ class ProfileControl:
 
         # Success! Activate the Profile...
         self.current_profile = temp_profile
+
         if save:
             # ... and Save it as On-Device Default.
             self.setCurrentProfileAsDefault()

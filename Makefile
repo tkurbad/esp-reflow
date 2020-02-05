@@ -34,7 +34,7 @@ MPY_CROSS=../micropython/mpy-cross/mpy-cross -march=xtensawin -X heapsize=111168
 
 all:
 	$(MPY_CROSS) config.py
-	-$(MPY_CROSS) private.py
+	-$(MPY_CROSS) private.py 2>/dev/null
 	$(MPY_CROSS) webrepl_cfg.py
 	$(MPY_CROSS) wlan_sta.py
 	$(MPY_CROSS) display/basic.py
@@ -51,11 +51,11 @@ deploy:
 	$(AMPY) put boot.py boot.py
 	$(AMPY) put main.py main.py
 	$(AMPY) put config.mpy config.mpy
-	-$(AMPY) put private.mpy
+	-$(AMPY) put private.mpy 2>/dev/null
 	$(AMPY) put webrepl_cfg.mpy webrepl_cfg.mpy
 	$(AMPY) put wlan_sta.mpy wlan_sta.mpy
-	-$(AMPY) mkdir --exists-okay display
-	-$(AMPY) mkdir --exists-okay display
+	-$(AMPY) mkdir --exists-okay display 2>/dev/null
+	-$(AMPY) mkdir --exists-okay display 2>/dev/null
 	$(AMPY) put display/__init__.py display/__init__.py
 	$(AMPY) put display/basic.mpy display/basic.mpy
 	$(AMPY) put display/icon.mpy display/icon.mpy
@@ -72,22 +72,22 @@ deploy:
 	$(AMPY) put thermocouple/thermocouple.mpy thermocouple/thermocouple.mpy
 
 erase:
-	-$(AMPY) rm boot.py
-	-$(AMPY) rm main.py
-	-$(AMPY) rm config.py
-	-$(AMPY) rm config.mpy
-	-$(AMPY) rm private.py
-	-$(AMPY) rm private.mpy
-	-$(AMPY) rm webrepl_cfg.py
-	-$(AMPY) rm webrepl_cfg.mpy
-	-$(AMPY) rm wlan_sta.py
-	-$(AMPY) rm wlan_sta.mpy
-	-$(AMPY) rmdir display
-	-$(AMPY) rmdir reflow
-	-$(AMPY) rmdir thermocouple
+	-$(AMPY) rm boot.py 2>/dev/null
+	-$(AMPY) rm main.py 2>/dev/null
+	-$(AMPY) rm config.py 2>/dev/null
+	-$(AMPY) rm config.mpy 2>/dev/null
+	-$(AMPY) rm private.py 2>/dev/null
+	-$(AMPY) rm private.mpy 2>/dev/null
+	-$(AMPY) rm webrepl_cfg.py 2>/dev/null
+	-$(AMPY) rm webrepl_cfg.mpy 2>/dev/null
+	-$(AMPY) rm wlan_sta.py 2>/dev/null
+	-$(AMPY) rm wlan_sta.mpy 2>/dev/null
+	-$(AMPY) rmdir display 2>/dev/null
+	-$(AMPY) rmdir reflow 2>/dev/null
+	-$(AMPY) rmdir thermocouple 2>/dev/null
 
 mrproper: erase
-	-$(AMPY) rm current.prf
+	-$(AMPY) rm current.prf 2>/dev/null
 
 reset:
 	$(AMPY) reset --hard
