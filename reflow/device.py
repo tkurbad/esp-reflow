@@ -190,14 +190,15 @@ class SDCardHandler:
                 if e.args[0] == 5:
                     # Error #5 EIO
                     try:
+                        # Card Probably Has Been Detected as SD Card
+                        # Version 2, although Being Version 1.
+                        sleep_ms (100)
                         if self.lock is not None:
                             with self.lock as l:
                                 self.sd.init_card_v1()
                                 mount(self.sd, mountpoint, readonly = readonly)
                                 self._mounted = True
                         else:
-                            # Card Probably Has Been Detected as SD Card
-                            # Version 2, although Being Version 1.
                             self.sd.init_card_v1()
                             mount(self.sd, mountpoint, readonly = readonly)
                             self._mounted = True
@@ -205,7 +206,7 @@ class SDCardHandler:
                         # Card Could not Be Mounted
                         self._mounted = False
                 else:
-                    raise
+                    raise e
         if self._mounted:
             self._mountpoint = mountpoint
         return self._mounted
