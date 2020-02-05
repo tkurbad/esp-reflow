@@ -235,7 +235,7 @@ profile_loader_menu = ProfileLoaderMenu(profile_control,
 
 
 # Print Memory Info
-print(mem_info())
+mem_info()
 
 ##
 ## Main Code
